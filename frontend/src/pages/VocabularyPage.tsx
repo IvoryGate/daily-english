@@ -3,13 +3,15 @@ import { Link } from 'react-router'
 import { BookOpen, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { isDue } from '@/lib/fsrs'
 import { getVocabulary, removeVocabulary } from '@/lib/storage'
 import type { VocabEntry } from '@/types'
 
-const stageLabels = ['新词', '学习中', '已掌握']
-
-function isDue(entry: VocabEntry): boolean {
-  return new Date(entry.nextReviewAt).getTime() <= Date.now()
+const stateLabels: Record<number, string> = {
+  0: '新词',
+  1: '学习中',
+  2: '复习中',
+  3: '重学中',
 }
 
 export function VocabularyPage() {
@@ -35,7 +37,7 @@ export function VocabularyPage() {
     )
   }
 
-  const dueCount = entries.filter(isDue).length
+  const dueCount = entries.filter((e) => isDue(e.card)).length
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
@@ -68,10 +70,10 @@ export function VocabularyPage() {
                       {entry.phonetic}
                     </span>
                   )}
-                  <Badge variant="outline">{stageLabels[entry.stage]}</Badge>
-                  {isDue(entry) && (
-                    <Badge>待复习</Badge>
-                  )}
+                  <Badge variant="outline">
+                    {stateLabels[entry.card.state] ?? '复习中'}
+                  </Badge>
+                  {isDue(entry.card) && <Badge>待复习</Badge>}
                 </div>
                 {entry.definition && (
                   <p className="mt-1 text-sm text-muted-foreground">

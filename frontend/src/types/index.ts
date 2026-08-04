@@ -29,10 +29,22 @@ export interface VocabEntry {
   definition?: string
   sourceTitle: string
   addedAt: string
-  /** 简单间隔复习：0 新词 / 1 学习中 / 2 已掌握 */
-  stage: number
-  /** 到期复习时间（ISO） */
-  nextReviewAt: string
+  /** FSRS 复习调度卡片数据 */
+  card: FSRSCardData
+}
+
+/** FSRS 卡片（序列化自 ts-fsrs 的 Card，date 用 ISO 字符串） */
+export interface FSRSCardData {
+  due: string
+  stability: number
+  difficulty: number
+  elapsed_days: number
+  scheduled_days: number
+  learning_steps: number
+  reps: number
+  lapses: number
+  state: number
+  last_review: string | null
 }
 
 export interface DictMeaning {

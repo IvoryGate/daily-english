@@ -1,49 +1,46 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { BookOpen, Check, RotateCcw, X } from 'lucide-react'
+import { BookOpen, Check, RotateCcw } from 'lucide-react'
+import { Rating } from 'ts-fsrs'
 import { Button } from '@/components/ui/button'
+import { isDue, review } from '@/lib/fsrs'
 import { getVocabulary, updateVocabulary } from '@/lib/storage'
 import type { VocabEntry } from '@/types'
 
-const DAY_MS = 24 * 60 * 60 * 1000
+const RATINGS = [
+  { rating: Rating.Again, label: '忘记' },
+  { rating: Rating.Hard, label: '困难' },
+  { rating: Rating.Good, label: '良好' },
+  { rating: Rating.Easy, label: '简单' },
+]
 
-function daysFromNow(days: number): string {
-  return new Date(Date.now() + days * DAY_MS).toISOString()
-}
-
-function isDue(entry: VocabEntry): boolean {
-  return new Date(entry.nextReviewAt).getTime() <= Date.now()
-}
-
-function review(entry: VocabEntry, remembered: boolean): VocabEntry {
-  if (remembered) {
-    const nextStage = Math.min(entry.stage + 1, 2)
-    const interval = [1, 3, 7][entry.stage]
-    return {
-      ...entry,
-      stage: nextStage,
-      nextReviewAt: daysFromNow(interval),
-    }
-  }
-  return {
-    ...entry,
-    stage: 0,
-    nextReviewAt: daysFromNow(1),
+function stateLabel(state: number): string {
+  switch (state) {
+    case 0:
+      return '新词'
+    case 1:
+      return '学习中'
+    case 3:
+      return '重学中'
+    default:
+      return '复习中'
   }
 }
 
 export function ReviewPage() {
   const [queue] = useState<VocabEntry[]>(() =>
-    getVocabulary().filter(isDue),
+    getVocabulary().filter((w) => isDue(w.card)),
   )
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
 
   const current = queue[index]
 
-  const respond = (remembered: boolean) => {
+  const respond = (rating: Rating) => {
     if (!current) return
-    updateVocabulary(current.word, review(current, remembered))
+    updateVocabulary(current.word, {
+      card: review(current.card, rating),
+    })
     setFlipped(false)
     setIndex((i) => i + 1)
   }
@@ -64,13 +61,12 @@ export function ReviewPage() {
   }
 
   if (index >= queue.length) {
-    const rememberedCount = queue.length
     return (
       <main className="mx-auto max-w-3xl px-4 py-20 text-center">
         <Check className="mx-auto size-10 text-emerald-600" />
         <h1 className="mt-4 text-xl font-semibold">本轮复习完成</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          复习了 {rememberedCount} 个生词
+          复习了 {queue.length} 个生词
         </p>
         <Button className="mt-6" asChild>
           <Link to="/vocabulary">查看生词本</Link>
@@ -85,7 +81,7 @@ export function ReviewPage() {
         <span>
           复习进度 {index + 1} / {queue.length}
         </span>
-        <span>{current.stage === 0 ? '新词' : current.stage === 1 ? '学习中' : '已掌握'}</span>
+        <span>{stateLabel(current.card.state)}</span>
       </div>
 
       <button
@@ -112,25 +108,31 @@ export function ReviewPage() {
 
       <div className="mt-6 flex justify-center gap-4">
         {flipped ? (
-          <>
-            <Button
-              variant="outline"
-              className="text-destructive"
-              onClick={() => respond(false)}
-            >
-              <X className="size-4" aria-hidden="true" />
-              没记住
-            </Button>
-            <Button onClick={() => respond(true)}>
-              <Check className="size-4" aria-hidden="true" />
-              记住了
-            </Button>
-          </>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {RATINGS.map(({ rating, label }) => (
+              <Button
+                key={rating}
+                variant={
+                  rating === Rating.Again ? 'outline' : rating === Rating.Easy ? 'default' : 'secondary'
+                }
+                className={
+                  rating === Rating.Again
+                    ? 'text-destructive'
+                    : rating === Rating.Easy
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : ''
+                }
+                onClick={() => respond(rating)}
+              >
+                {label}
+              </Button>
+            ))}
+            <p className="col-span-full text-center text-xs text-muted-foreground">
+              忘记 / 困难 / 良好 / 简单 —— 你的回忆难度会调整下次复习时间
+            </p>
+          </div>
         ) : (
-          <Button
-            variant="secondary"
-            onClick={() => setFlipped(true)}
-          >
+          <Button variant="secondary" onClick={() => setFlipped(true)}>
             <RotateCcw className="size-4" aria-hidden="true" />
             显示释义
           </Button>

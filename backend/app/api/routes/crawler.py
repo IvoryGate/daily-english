@@ -1,9 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException
 
-from app.crawler import crawl
 from app.crawler.registry import sources
-from app.database import get_db
+from app.crawler.tasks import scheduler
 
 router = APIRouter(prefix="/api/crawl", tags=["crawl"])
 
@@ -15,13 +13,22 @@ def list_sources() -> dict:
 
 
 @router.post("")
-def trigger_crawl(
-    source: str | None = None,
-    db: Session = Depends(get_db),
-) -> dict:
-    """触发一次抓取。source 为空时抓全部已注册来源；逗号分隔可抓多个。"""
-    requested = [s.strip() for s in source.split(",") if s.strip()] if source else None
+def trigger_crawl(source: str | None = None) -> dict:
+    """异步触发一次抓取，立即返回任务 id。source 为空抓全部；逗号分隔可抓多个。"""
+    requested = (
+        [s.strip() for s in source.split(",") if s.strip()] if source else None
+    )
     try:
-        return crawl(db, sources=requested)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"抓取失败: {exc}") from exc
+        task_id = scheduler.start(sources=requested)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return {"task_id": task_id, "status": "running"}
+
+
+@router.get("/status/{task_id}")
+def task_status(task_id: str) -> dict:
+    """查询抓取任务状态与结果。"""
+    task = scheduler.get(task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    return task

@@ -38,12 +38,22 @@ export function ArticleListPage() {
     setCrawlMessage(null)
     try {
       const res = await fetch('/api/crawl', { method: 'POST' })
-      const data = (await res.json()) as { inserted?: number }
       if (!res.ok) {
         throw new Error('抓取失败')
       }
-      setCrawlMessage(`本次新增 ${data.inserted ?? 0} 篇`)
-      refresh()
+      const { task_id } = (await res.json()) as { task_id: string }
+      let task: { status: string; result?: { inserted?: number } }
+      do {
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+        const statusRes = await fetch(`/api/crawl/status/${task_id}`)
+        task = (await statusRes.json()) as typeof task
+      } while (task.status === 'running')
+      if (task.status === 'done') {
+        setCrawlMessage(`抓取完成，新增 ${task.result?.inserted ?? 0} 篇`)
+        refresh()
+      } else {
+        setCrawlMessage('抓取失败，请稍后重试')
+      }
     } catch {
       setCrawlMessage('抓取失败，请稍后重试')
     } finally {

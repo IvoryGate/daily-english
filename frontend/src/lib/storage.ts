@@ -1,4 +1,5 @@
 import type { Article, DictEntry, VocabEntry } from '@/types'
+import { newCard } from '@/lib/fsrs'
 
 const KEYS = {
   localArticles: 'de.localArticles.v1',
@@ -70,13 +71,56 @@ export function deleteLocalArticle(id: number): void {
 // ---- 生词本 ----
 
 export function getVocabulary(): VocabEntry[] {
-  return read<VocabEntry[]>(KEYS.vocabulary, [])
+  return read<VocabEntry[]>(KEYS.vocabulary, []).map(migrateEntry)
 }
 
-export function addVocabulary(entry: VocabEntry): void {
+interface LegacyVocab {
+  word: string
+  phonetic?: string
+  definition?: string
+  sourceTitle?: string
+  addedAt?: string
+  stage?: number
+  nextReviewAt?: string
+  card?: VocabEntry['card']
+}
+
+function migrateEntry(entry: LegacyVocab): VocabEntry {
+  if (entry.card) {
+    return {
+      word: entry.word,
+      phonetic: entry.phonetic,
+      definition: entry.definition,
+      sourceTitle: entry.sourceTitle ?? '',
+      addedAt: entry.addedAt ?? new Date().toISOString(),
+      card: entry.card,
+    }
+  }
+  const card = newCard()
+  if (entry.nextReviewAt) card.due = entry.nextReviewAt
+  return {
+    word: entry.word,
+    phonetic: entry.phonetic,
+    definition: entry.definition,
+    sourceTitle: entry.sourceTitle ?? '',
+    addedAt: entry.addedAt ?? new Date().toISOString(),
+    card,
+  }
+}
+
+export function addVocabulary(input: {
+  word: string
+  phonetic?: string
+  definition?: string
+  sourceTitle: string
+}): void {
   const words = getVocabulary()
-  if (words.some((w) => w.word === entry.word)) return
-  words.unshift(entry)
+  if (words.some((w) => w.word === input.word)) return
+  words.unshift({
+    ...input,
+    addedAt: new Date().toISOString(),
+    card: newCard(),
+  })
   write(KEYS.vocabulary, words)
 }
 

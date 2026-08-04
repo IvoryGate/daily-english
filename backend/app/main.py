@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import articles, crawler
+from app.crawler.tasks import scheduler as crawl_scheduler
 from app.seed import seed
 
 
@@ -11,7 +13,19 @@ from app.seed import seed
 async def lifespan(app: FastAPI):
     # 启动时建表 + 灌入内置语料（幂等）
     seed()
+    # 每天 08:00 自动增量抓取外部文章（风控已在 provider 内，幂等去重）
+    sched = BackgroundScheduler(timezone="Asia/Shanghai")
+    sched.add_job(
+        crawl_scheduler.trigger_daily,
+        "cron",
+        hour=8,
+        minute=0,
+        id="daily_crawl",
+        replace_existing=True,
+    )
+    sched.start()
     yield
+    sched.shutdown(wait=False)
 
 
 app = FastAPI(title="DailyEnglish API", version="0.1.0", lifespan=lifespan)

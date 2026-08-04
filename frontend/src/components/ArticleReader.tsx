@@ -131,9 +131,6 @@ function WordPanel({ word, x, y, sourceTitle, onClose }: WordPanelProps) {
         phonetic: entry?.phonetic,
         definition: entry?.meanings[0]?.definition,
         sourceTitle,
-        addedAt: new Date().toISOString(),
-        stage: 0,
-        nextReviewAt: new Date().toISOString(),
       })
       setSaved(true)
     }
