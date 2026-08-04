@@ -9,6 +9,7 @@ backend/data/
 # Node（frontend/.gitignore 已覆盖，此处兜底）
 node_modules/
 dist/
+build/
 
 # 编辑器
 .vscode/

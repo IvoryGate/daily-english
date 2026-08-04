@@ -1,0 +1,27 @@
+# DailyEnglish 后端 systemd 服务
+#
+# 用法（服务器上，部署目录为 /opt/dailyenglish）：
+#   sudo cp deploy/dailyenglish.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now dailyenglish
+#
+# 说明：
+#   - uvicorn 只监听 127.0.0.1，对外统一走 Nginx
+#   - Restart=always：崩溃自动拉起
+#   - 环境变量 PYTHONUNBUFFERED 保证日志实时输出
+
+[Unit]
+Description=DailyEnglish FastAPI backend
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/dailyenglish/backend
+ExecStart=/opt/dailyenglish/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
