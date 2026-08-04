@@ -6,7 +6,7 @@
 
 ## 当前进度
 
-**当前阶段：05 后端 API**（04 前端框架已完成，详见 [`04-前端框架.md`](./04-前端框架.md)）
+**当前阶段：06 数据库**（05 后端 API 已完成，详见 [`05-后端API.md`](./05-后端API.md)）
 
 ---
 
@@ -19,7 +19,8 @@
 | 02 | 环境搭建（Node/Python 环境、前后端骨架） | [`02-环境搭建.md`](./02-环境搭建.md) | ✅ |
 | 03 | 前端基础（Vite+React+TS、Tailwind+shadcn/ui、组件化） | [`03-前端基础.md`](./03-前端基础.md) | ✅ |
 | 04 | 前端框架（路由、数据请求、mock 数据） | [`04-前端框架.md`](./04-前端框架.md) | ✅ |
-| 05 | 后端 API（FastAPI 骨架、CORS、文章接口） | `05-后端API.md`（待建） | ⏳ 进行中 |
+| 05 | 后端 API（FastAPI 骨架、CORS、文章接口） | [`05-后端API.md`](./05-后端API.md) | ✅ |
+| 06 | 数据库（SQLAlchemy 模型、SQLite、seed 语料） | `06-数据库.md`（待建） | ⏳ 进行中 |
 | 05 | 后端 API（FastAPI 骨架、文章接口） | `05-后端API.md`（待建） | ⬜ |
 | 06 | 数据库（SQLAlchemy 模型、SQLite、seed 语料） | `06-数据库.md`（待建） | ⬜ |
 | 07 | 前后端联调（Vite 代理、数据打通、体验打磨） | `07-前后端联调.md`（待建） | ⬜ |
@@ -64,3 +65,11 @@
 - **完成内容**：引入 react-router 8（`/` 列表、`/articles/:id` 详情）；建 `src/api/` + `src/hooks/`（fetchArticles/fetchArticle + useArticles/useArticle，异步 Promise + loading/error 状态）；ArticleCard 改用 Link；SiteHeader 提到布局层；详情页 404 兜底；build/lint 通过，两路由验证 200
 - **决策记录**：返回按钮用 Link 而非 navigate(-1)（避免无历史失效）；数据层签名与真接口对齐，联调时只改函数体
 - **详细记录**：见 [`04-前端框架.md`](./04-前端框架.md)
+
+### 阶段 05：后端 API
+
+- **日期**：2026-08-04
+- **完成内容**：拆出 schemas.py（Pydantic 模型）/ mock_data.py / api/routes/articles.py；`GET /api/articles` 列表 + `GET /api/articles/{id}` 详情（含 404）；main.py 加 CORS（允许 5173 两个 Origin）并挂载路由；数据先用内存 mock，阶段 06 换数据库
+- **决策记录**：前端后端并行用 mock，数据结构先对齐；404 走 HTTPException 标准 JSON
+- **踩坑记录**：bash 命令超时会连带杀掉 setsid 的后台 uvicorn → nohup setsid + curl --max-time
+- **详细记录**：见 [`05-后端API.md`](./05-后端API.md)
