@@ -1,6 +1,15 @@
 import { getLocalArticles } from '@/lib/storage'
 import type { Article, ArticleSource, Difficulty } from '@/types'
 
+export type SortKey = 'latest' | 'longest' | 'shortest'
+
+export interface ArticleQuery {
+  q?: string
+  difficulty?: Difficulty | ''
+  source?: ArticleSource | 'all'
+  sort?: SortKey
+}
+
 interface ArticleSummaryDTO {
   id: number
   title: string
@@ -40,11 +49,56 @@ async function request<T>(url: string): Promise<T> {
   return (await res.json()) as T
 }
 
-export async function fetchArticles(): Promise<Article[]> {
-  const data = await request<ArticleSummaryDTO[]>('/api/articles')
+function matches(article: Article, query: ArticleQuery): boolean {
+  if (query.source && query.source !== 'all' && article.source !== query.source) {
+    return false
+  }
+  if (query.difficulty && article.difficulty !== query.difficulty) {
+    return false
+  }
+  if (query.q) {
+    const needle = query.q.trim().toLowerCase()
+    const haystack = [
+      article.title,
+      article.excerpt,
+      article.content ?? '',
+      article.tags.join(' '),
+    ]
+      .join(' ')
+      .toLowerCase()
+    if (!haystack.includes(needle)) return false
+  }
+  return true
+}
+
+function applySort(list: Article[], sort: SortKey): Article[] {
+  const sorted = [...list]
+  switch (sort) {
+    case 'longest':
+      return sorted.sort((a, b) => b.readTimeMinutes - a.readTimeMinutes)
+    case 'shortest':
+      return sorted.sort((a, b) => a.readTimeMinutes - b.readTimeMinutes)
+    default:
+      return sorted.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+  }
+}
+
+export async function fetchArticles(
+  query: ArticleQuery = {},
+): Promise<Article[]> {
+  const params = new URLSearchParams()
+  if (query.q) params.set('q', query.q)
+  if (query.difficulty) params.set('difficulty', query.difficulty)
+  const qs = params.toString()
+  const url = qs ? `/api/articles?${qs}` : '/api/articles'
+  const data = await request<ArticleSummaryDTO[]>(url)
   const server = data.map(toArticle)
   const local = getLocalArticles()
-  return [...server, ...local]
+  const merged = [...server, ...local]
+  return applySort(merged.filter((a) => matches(a, query)), query.sort ?? 'latest')
 }
 
 export async function fetchArticle(id: number): Promise<Article | undefined> {

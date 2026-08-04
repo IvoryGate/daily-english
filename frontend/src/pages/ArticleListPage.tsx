@@ -1,17 +1,41 @@
-import { useMemo, useState } from 'react'
-import { LoaderCircle } from 'lucide-react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { LoaderCircle, Search } from 'lucide-react'
 import { ArticleCard } from '@/components/ArticleCard'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useArticles } from '@/hooks/useArticles'
+import { difficultyLabels } from '@/lib/difficulty'
 import { sourceLabel } from '@/lib/sourceLabels'
+import type { ArticleSource, Difficulty } from '@/types'
+import type { SortKey } from '@/api/articles'
 
-type Filter = 'all' | string
+const PAGE_SIZE = 10
+const DIFFICULTIES: (Difficulty | '')[] = ['', 'beginner', 'intermediate', 'advanced']
+const SORTS: { value: SortKey; label: string }[] = [
+  { value: 'latest', label: '最新' },
+  { value: 'longest', label: '最长' },
+  { value: 'shortest', label: '最短' },
+]
 
 export function ArticleListPage() {
-  const { articles, loading, error, refresh } = useArticles()
-  const [filter, setFilter] = useState<Filter>('all')
+  const [searchInput, setSearchInput] = useState('')
+  const deferredSearch = useDeferredValue(searchInput.trim())
+  const [source, setSource] = useState<ArticleSource | 'all'>('all')
+  const [difficulty, setDifficulty] = useState<Difficulty | ''>('')
+  const [sort, setSort] = useState<SortKey>('latest')
   const [crawling, setCrawling] = useState(false)
   const [crawlMessage, setCrawlMessage] = useState<string | null>(null)
+  const [visible, setVisible] = useState(PAGE_SIZE)
+
+  const query = useMemo(
+    () => ({ q: deferredSearch, source, difficulty, sort }),
+    [deferredSearch, source, difficulty, sort],
+  )
+  const { articles, loading, error, refresh } = useArticles(query)
+
+  useEffect(() => {
+    setVisible(PAGE_SIZE)
+  }, [deferredSearch, source, difficulty, sort])
 
   const sources = useMemo(() => {
     const set = new Set<string>()
@@ -21,8 +45,8 @@ export function ArticleListPage() {
     return Array.from(set)
   }, [articles])
 
-  const filtered =
-    filter === 'all' ? articles : articles.filter((a) => a.source === filter)
+  const visibleArticles = articles.slice(0, visible)
+  const hasMore = visible < articles.length
 
   const counts = useMemo(() => {
     const map: Record<string, number> = { all: articles.length }
@@ -88,6 +112,49 @@ export function ArticleListPage() {
         )}
       </section>
 
+      <div className="mb-3 flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            type="search"
+            placeholder="搜索标题或正文…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="pl-9"
+            aria-label="搜索文章"
+          />
+        </div>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          className="h-9 shrink-0 rounded-md border bg-background px-2 text-sm"
+          aria-label="排序方式"
+        >
+          {SORTS.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="mb-2 flex flex-wrap gap-2" role="tablist" aria-label="难度筛选">
+        {DIFFICULTIES.map((d) => (
+          <Button
+            key={d || 'all'}
+            size="sm"
+            variant={difficulty === d ? 'default' : 'ghost'}
+            onClick={() => setDifficulty(d)}
+            aria-pressed={difficulty === d}
+          >
+            {d ? difficultyLabels[d] : '全部难度'}
+          </Button>
+        ))}
+      </div>
+
       <div
         className="mb-5 flex flex-wrap gap-2"
         role="tablist"
@@ -95,24 +162,24 @@ export function ArticleListPage() {
       >
         <Button
           size="sm"
-          variant={filter === 'all' ? 'default' : 'ghost'}
-          onClick={() => setFilter('all')}
-          aria-pressed={filter === 'all'}
+          variant={source === 'all' ? 'default' : 'ghost'}
+          onClick={() => setSource('all')}
+          aria-pressed={source === 'all'}
         >
           全部
           <span className="ml-1 text-xs opacity-70">{counts.all}</span>
         </Button>
-        {sources.map((source) => (
+        {sources.map((s) => (
           <Button
-            key={source}
+            key={s}
             size="sm"
-            variant={filter === source ? 'default' : 'ghost'}
-            onClick={() => setFilter(source)}
-            aria-pressed={filter === source}
+            variant={source === s ? 'default' : 'ghost'}
+            onClick={() => setSource(s as ArticleSource)}
+            aria-pressed={source === s}
           >
-            {sourceLabel(source)}
+            {sourceLabel(s)}
             <span className="ml-1 text-xs opacity-70">
-              {counts[source] ?? 0}
+              {counts[s] ?? 0}
             </span>
           </Button>
         ))}
@@ -131,16 +198,28 @@ export function ArticleListPage() {
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {!loading && !error && (
-        <div className="flex flex-col gap-3">
-          {filtered.map((article) => (
-            <ArticleCard key={article.id} article={article} />
-          ))}
-          {filtered.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              没有文章，试试「同步外部文章」或「添加文章」
-            </p>
+        <>
+          <div className="flex flex-col gap-3">
+            {visibleArticles.map((article) => (
+              <ArticleCard key={article.id} article={article} />
+            ))}
+            {visibleArticles.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                没有符合条件的文章
+              </p>
+            )}
+          </div>
+          {hasMore && (
+            <div className="mt-6 text-center">
+              <Button
+                variant="outline"
+                onClick={() => setVisible((v) => v + PAGE_SIZE)}
+              >
+                加载更多
+              </Button>
+            </div>
           )}
-        </div>
+        </>
       )}
     </main>
   )

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -34,12 +34,25 @@ def _to_detail(row: Article) -> ArticleDetail:
 @router.get("", response_model=list[ArticleSummary])
 def list_articles(
     source: str | None = None,
+    q: str | None = None,
+    difficulty: str | None = None,
     db: Session = Depends(get_db),
 ) -> list[ArticleSummary]:
-    """返回文章列表（摘要信息，不含正文），按创建时间倒序。可选按来源过滤。"""
+    """返回文章列表（摘要信息，不含正文），按创建时间倒序。可组合过滤：来源/关键词/难度。"""
     query = select(Article)
     if source:
         query = query.where(Article.source == source)
+    if q:
+        like = f"%{q.strip()}%"
+        query = query.where(
+            or_(
+                Article.title.like(like),
+                Article.excerpt.like(like),
+                Article.content.like(like),
+            )
+        )
+    if difficulty:
+        query = query.where(Article.difficulty == difficulty)
     rows = db.scalars(query.order_by(Article.created_at.desc())).all()
     return [_to_summary(row) for row in rows]
 

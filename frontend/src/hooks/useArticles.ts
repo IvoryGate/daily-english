@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { fetchArticles } from '@/api/articles'
+import { fetchArticles, type ArticleQuery } from '@/api/articles'
 import type { Article } from '@/types'
 
 interface UseArticlesResult {
@@ -9,17 +9,18 @@ interface UseArticlesResult {
   refresh: () => void
 }
 
-export function useArticles(): UseArticlesResult {
+export function useArticles(query?: ArticleQuery): UseArticlesResult {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [version, setVersion] = useState(0)
+  const queryKey = JSON.stringify(query ?? {})
 
   useEffect(() => {
     let active = true
     setLoading(true)
     setError(null)
-    fetchArticles()
+    fetchArticles(JSON.parse(queryKey))
       .then((data) => {
         if (active) setArticles(data)
       })
@@ -32,7 +33,7 @@ export function useArticles(): UseArticlesResult {
     return () => {
       active = false
     }
-  }, [version])
+  }, [queryKey, version])
 
   const refresh = useCallback(() => {
     setVersion((v) => v + 1)
