@@ -1,0 +1,17 @@
+# Python / backend
+__pycache__/
+*.py[cod]
+.venv/
+backend/data/
+*.db
+*.sqlite3
+
+# Node（frontend/.gitignore 已覆盖，此处兜底）
+node_modules/
+dist/
+
+# 编辑器
+.vscode/
+.idea/
+*.sw?
+.DS_Store
