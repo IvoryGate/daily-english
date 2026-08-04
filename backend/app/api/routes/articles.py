@@ -1,24 +1,47 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from app.mock_data import MOCK_ARTICLES
+from app.database import get_db
+from app.models import Article
 from app.schemas import ArticleDetail, ArticleSummary
 
 router = APIRouter(prefix="/api/articles", tags=["articles"])
 
 
+def _to_summary(row: Article) -> ArticleSummary:
+    return ArticleSummary(
+        id=row.id,
+        title=row.title,
+        excerpt=row.excerpt,
+        difficulty=row.difficulty,
+        tags=row.tags.split(",") if row.tags else [],
+        read_time_minutes=row.read_time_minutes,
+        created_at=row.created_at,
+    )
+
+
+def _to_detail(row: Article) -> ArticleDetail:
+    summary = _to_summary(row)
+    return ArticleDetail(
+        **summary.model_dump(),
+        content=row.content,
+    )
+
+
 @router.get("", response_model=list[ArticleSummary])
-def list_articles() -> list[ArticleSummary]:
-    """返回文章列表（摘要信息，不含正文）。"""
-    return [ArticleSummary.model_validate(a) for a in MOCK_ARTICLES]
+def list_articles(db: Session = Depends(get_db)) -> list[ArticleSummary]:
+    """返回文章列表（摘要信息，不含正文），按创建时间倒序。"""
+    rows = db.scalars(
+        select(Article).order_by(Article.created_at.desc())
+    ).all()
+    return [_to_summary(row) for row in rows]
 
 
 @router.get("/{article_id}", response_model=ArticleDetail)
-def get_article(article_id: int) -> ArticleDetail:
+def get_article(article_id: int, db: Session = Depends(get_db)) -> ArticleDetail:
     """返回文章详情（含完整正文）。"""
-    article = next(
-        (a for a in MOCK_ARTICLES if a["id"] == article_id),
-        None,
-    )
-    if article is None:
+    row = db.get(Article, article_id)
+    if row is None:
         raise HTTPException(status_code=404, detail="文章不存在")
-    return ArticleDetail.model_validate(article)
+    return _to_detail(row)

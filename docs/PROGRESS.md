@@ -6,7 +6,7 @@
 
 ## 当前进度
 
-**当前阶段：06 数据库**（05 后端 API 已完成，详见 [`05-后端API.md`](./05-后端API.md)）
+**当前阶段：07 前后端联调**（06 数据库已完成，详见 [`06-数据库.md`](./06-数据库.md)）
 
 ---
 
@@ -20,7 +20,8 @@
 | 03 | 前端基础（Vite+React+TS、Tailwind+shadcn/ui、组件化） | [`03-前端基础.md`](./03-前端基础.md) | ✅ |
 | 04 | 前端框架（路由、数据请求、mock 数据） | [`04-前端框架.md`](./04-前端框架.md) | ✅ |
 | 05 | 后端 API（FastAPI 骨架、CORS、文章接口） | [`05-后端API.md`](./05-后端API.md) | ✅ |
-| 06 | 数据库（SQLAlchemy 模型、SQLite、seed 语料） | `06-数据库.md`（待建） | ⏳ 进行中 |
+| 06 | 数据库（SQLAlchemy 模型、SQLite、seed 语料） | [`06-数据库.md`](./06-数据库.md) | ✅ |
+| 07 | 前后端联调（Vite 代理、数据打通、体验打磨） | `07-前后端联调.md`（待建） | ⏳ 进行中 |
 | 05 | 后端 API（FastAPI 骨架、文章接口） | `05-后端API.md`（待建） | ⬜ |
 | 06 | 数据库（SQLAlchemy 模型、SQLite、seed 语料） | `06-数据库.md`（待建） | ⬜ |
 | 07 | 前后端联调（Vite 代理、数据打通、体验打磨） | `07-前后端联调.md`（待建） | ⬜ |
@@ -73,3 +74,10 @@
 - **决策记录**：前端后端并行用 mock，数据结构先对齐；404 走 HTTPException 标准 JSON
 - **踩坑记录**：bash 命令超时会连带杀掉 setsid 的后台 uvicorn → nohup setsid + curl --max-time
 - **详细记录**：见 [`05-后端API.md`](./05-后端API.md)
+
+### 阶段 06：数据库
+
+- **日期**：2026-08-04
+- **完成内容**：SQLAlchemy 2.0 新式模型（Article，字段对齐规划）；SQLite 库 `backend/data/daily_english.db`（已 gitignore）；seed.py 幂等灌库（lifespan 启动自动执行）；路由改查库（get_db 依赖注入、created_at 倒序、ORM→Schema 显式转换）；接口全部 curl 验证通过
+- **踩坑记录**：SQLite DateTime 不收字符串 → `datetime.fromisoformat`；WSL 启动慢 curl 太早 502
+- **详细记录**：见 [`06-数据库.md`](./06-数据库.md)

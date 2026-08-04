@@ -1,9 +1,20 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import articles
+from app.seed import seed
 
-app = FastAPI(title="DailyEnglish API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 启动时建表 + 灌入内置语料（幂等）
+    seed()
+    yield
+
+
+app = FastAPI(title="DailyEnglish API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
