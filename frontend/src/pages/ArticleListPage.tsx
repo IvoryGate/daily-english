@@ -14,7 +14,14 @@ export function ArticleListPage() {
       </section>
 
       {loading && (
-        <p className="text-sm text-muted-foreground">加载中…</p>
+        <div className="flex flex-col gap-3" aria-label="加载中">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-24 animate-pulse rounded-xl bg-muted"
+            />
+          ))}
+        </div>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
 

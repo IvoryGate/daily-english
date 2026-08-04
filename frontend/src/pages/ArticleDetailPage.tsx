@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useArticle } from '@/hooks/useArticle'
+import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
 
 export function ArticleDetailPage() {
   const { id } = useParams()
@@ -46,6 +47,9 @@ export function ArticleDetailPage() {
         <header className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight">{article.title}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <Badge className={difficultyStyles[article.difficulty]}>
+              {difficultyLabels[article.difficulty]}
+            </Badge>
             <span className="flex items-center gap-1">
               <Clock className="size-4" aria-hidden="true" />
               {article.readTimeMinutes} 分钟阅读
@@ -62,7 +66,7 @@ export function ArticleDetailPage() {
         <Separator className="mb-8" />
 
         <div className="space-y-5 text-[15px] leading-7 text-foreground/90">
-          {article.content.split('\n\n').map((paragraph, index) => (
+          {(article.content ?? '').split('\n\n').map((paragraph, index) => (
             <p key={index}>{paragraph}</p>
           ))}
         </div>

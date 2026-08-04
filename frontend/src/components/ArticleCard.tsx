@@ -7,19 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import type { Article, Difficulty } from '@/types'
-
-const difficultyStyles: Record<Difficulty, string> = {
-  beginner: 'bg-emerald-600/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
-  intermediate: 'bg-amber-600/10 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
-  advanced: 'bg-rose-600/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
-}
-
-const difficultyLabels: Record<Difficulty, string> = {
-  beginner: '入门',
-  intermediate: '进阶',
-  advanced: '挑战',
-}
+import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
+import type { Article } from '@/types'
 
 interface ArticleCardProps {
   article: Article
