@@ -6,7 +6,7 @@
 
 ## 当前进度
 
-**当前阶段：04 前端框架**（03 前端基础已完成，详见 [`03-前端基础.md`](./03-前端基础.md)）
+**当前阶段：05 后端 API**（04 前端框架已完成，详见 [`04-前端框架.md`](./04-前端框架.md)）
 
 ---
 
@@ -18,7 +18,8 @@
 | 01 | 项目规划（产品定位、技术选型、MVP 边界） | [`01-项目规划.md`](./01-项目规划.md) | ✅ |
 | 02 | 环境搭建（Node/Python 环境、前后端骨架） | [`02-环境搭建.md`](./02-环境搭建.md) | ✅ |
 | 03 | 前端基础（Vite+React+TS、Tailwind+shadcn/ui、组件化） | [`03-前端基础.md`](./03-前端基础.md) | ✅ |
-| 04 | 前端框架（路由、数据请求、mock 数据） | `04-前端框架.md`（待建） | ⏳ 进行中 |
+| 04 | 前端框架（路由、数据请求、mock 数据） | [`04-前端框架.md`](./04-前端框架.md) | ✅ |
+| 05 | 后端 API（FastAPI 骨架、CORS、文章接口） | `05-后端API.md`（待建） | ⏳ 进行中 |
 | 05 | 后端 API（FastAPI 骨架、文章接口） | `05-后端API.md`（待建） | ⬜ |
 | 06 | 数据库（SQLAlchemy 模型、SQLite、seed 语料） | `06-数据库.md`（待建） | ⬜ |
 | 07 | 前后端联调（Vite 代理、数据打通、体验打磨） | `07-前后端联调.md`（待建） | ⬜ |
@@ -56,3 +57,10 @@
 - **完成内容**：前端目录结构（api/components/hooks/pages/types/lib）；引入 Tailwind CSS v4（Vite 插件）；shadcn/ui 初始化（radix-nova preset）+ card/badge/separator 组件；静态页面骨架（列表页 + 阅读页，4 篇公版 Aesop mock 数据）；vite.config 配 `@/` 别名和 /api 代理；build/lint 通过，dev server 验证正常
 - **踩坑记录**：ESM `__dirname` 不可用 → `import.meta.dirname`；shadcn add 连不上 npm 官方 registry 卡死 → 项目 `.npmrc` 指镜像；shadcn 组件误写到 `@/` 字面目录 → 根 tsconfig 补 paths；TS 6.0 弃用 baseUrl → 用相对路径 paths
 - **详细记录**：见 [`03-前端基础.md`](./03-前端基础.md)
+
+### 阶段 04：前端框架
+
+- **日期**：2026-08-04
+- **完成内容**：引入 react-router 8（`/` 列表、`/articles/:id` 详情）；建 `src/api/` + `src/hooks/`（fetchArticles/fetchArticle + useArticles/useArticle，异步 Promise + loading/error 状态）；ArticleCard 改用 Link；SiteHeader 提到布局层；详情页 404 兜底；build/lint 通过，两路由验证 200
+- **决策记录**：返回按钮用 Link 而非 navigate(-1)（避免无历史失效）；数据层签名与真接口对齐，联调时只改函数体
+- **详细记录**：见 [`04-前端框架.md`](./04-前端框架.md)

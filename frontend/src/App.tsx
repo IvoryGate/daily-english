@@ -1,19 +1,20 @@
-import { useState } from 'react'
-import { mockArticles } from '@/lib/mockArticles'
+import { BrowserRouter, Route, Routes } from 'react-router'
+import { SiteHeader } from '@/components/SiteHeader'
 import { ArticleDetailPage } from '@/pages/ArticleDetailPage'
 import { ArticleListPage } from '@/pages/ArticleListPage'
 
 function App() {
-  const [selectedId, setSelectedId] = useState<number | null>(null)
-  const article = mockArticles.find((item) => item.id === selectedId) ?? null
-
-  if (article) {
-    return (
-      <ArticleDetailPage article={article} onBack={() => setSelectedId(null)} />
-    )
-  }
-
-  return <ArticleListPage onSelect={setSelectedId} />
+  return (
+    <BrowserRouter>
+      <div className="min-h-screen bg-background">
+        <SiteHeader />
+        <Routes>
+          <Route path="/" element={<ArticleListPage />} />
+          <Route path="/articles/:id" element={<ArticleDetailPage />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
+  )
 }
 
 export default App

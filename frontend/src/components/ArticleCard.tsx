@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -22,39 +23,39 @@ const difficultyLabels: Record<Difficulty, string> = {
 
 interface ArticleCardProps {
   article: Article
-  onSelect: (id: number) => void
 }
 
-export function ArticleCard({ article, onSelect }: ArticleCardProps) {
+export function ArticleCard({ article }: ArticleCardProps) {
   return (
-    <Card
-      size="sm"
-      className="cursor-pointer transition-colors hover:bg-muted/40"
-      onClick={() => onSelect(article.id)}
-    >
-      <CardHeader>
-        <CardTitle className="text-base font-semibold">
-          {article.title}
-        </CardTitle>
-        <CardDescription className="line-clamp-2">
-          {article.excerpt}
-        </CardDescription>
-      </CardHeader>
-      <div className="flex flex-wrap items-center gap-2 px-(--card-spacing) pt-1">
-        <Badge className={difficultyStyles[article.difficulty]}>
-          {difficultyLabels[article.difficulty]}
-        </Badge>
-        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Clock className="size-3.5" aria-hidden="true" />
-          {article.readTimeMinutes} 分钟
-        </span>
-        {article.tags.map((tag) => (
-          <Badge key={tag} variant="outline">
-            {tag}
+    <Link to={`/articles/${article.id}`} className="block">
+      <Card
+        size="sm"
+        className="transition-colors hover:bg-muted/40"
+      >
+        <CardHeader>
+          <CardTitle className="text-base font-semibold">
+            {article.title}
+          </CardTitle>
+          <CardDescription className="line-clamp-2">
+            {article.excerpt}
+          </CardDescription>
+        </CardHeader>
+        <div className="flex flex-wrap items-center gap-2 px-(--card-spacing) pt-1">
+          <Badge className={difficultyStyles[article.difficulty]}>
+            {difficultyLabels[article.difficulty]}
           </Badge>
-        ))}
-      </div>
-      <div className="pt-2" />
-    </Card>
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="size-3.5" aria-hidden="true" />
+            {article.readTimeMinutes} 分钟
+          </span>
+          {article.tags.map((tag) => (
+            <Badge key={tag} variant="outline">
+              {tag}
+            </Badge>
+          ))}
+        </div>
+        <div className="pt-2" />
+      </Card>
+    </Link>
   )
 }
