@@ -28,8 +28,8 @@ export function ArticleListPage() {
   const [visible, setVisible] = useState(PAGE_SIZE)
 
   const query = useMemo(
-    () => ({ q: deferredSearch, source, difficulty, sort }),
-    [deferredSearch, source, difficulty, sort],
+    () => ({ q: deferredSearch, difficulty, sort }),
+    [deferredSearch, difficulty, sort],
   )
   const { articles, loading, error, refresh } = useArticles(query)
 
@@ -45,8 +45,13 @@ export function ArticleListPage() {
     return Array.from(set)
   }, [articles])
 
-  const visibleArticles = articles.slice(0, visible)
-  const hasMore = visible < articles.length
+  const filteredBySource = useMemo(
+    () => (source === 'all' ? articles : articles.filter((a) => a.source === source)),
+    [articles, source],
+  )
+
+  const visibleArticles = filteredBySource.slice(0, visible)
+  const hasMore = visible < filteredBySource.length
 
   const counts = useMemo(() => {
     const map: Record<string, number> = { all: articles.length }
