@@ -1,13 +1,16 @@
-import { Link, useParams } from 'react-router'
-import { ArrowLeft, Clock } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router'
+import { ArrowLeft, Clock, Trash2 } from 'lucide-react'
+import { ArticleReader } from '@/components/ArticleReader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useArticle } from '@/hooks/useArticle'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
+import { deleteLocalArticle } from '@/lib/storage'
 
 export function ArticleDetailPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { article, loading } = useArticle(Number(id))
 
   if (loading) {
@@ -34,13 +37,27 @@ export function ArticleDetailPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <Button variant="ghost" size="sm" asChild>
           <Link to="/">
             <ArrowLeft className="size-4" aria-hidden="true" />
             返回列表
           </Link>
         </Button>
+        {article.source === 'local' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => {
+              deleteLocalArticle(article.id)
+              navigate('/')
+            }}
+          >
+            <Trash2 className="size-4" aria-hidden="true" />
+            删除文章
+          </Button>
+        )}
       </div>
 
       <article>
@@ -65,11 +82,7 @@ export function ArticleDetailPage() {
 
         <Separator className="mb-8" />
 
-        <div className="space-y-5 text-[15px] leading-7 text-foreground/90">
-          {(article.content ?? '').split('\n\n').map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
-          ))}
-        </div>
+        <ArticleReader content={article.content ?? ''} sourceTitle={article.title} />
       </article>
     </main>
   )

@@ -2,6 +2,9 @@ import { BrowserRouter, Route, Routes } from 'react-router'
 import { SiteHeader } from '@/components/SiteHeader'
 import { ArticleDetailPage } from '@/pages/ArticleDetailPage'
 import { ArticleListPage } from '@/pages/ArticleListPage'
+import { NewArticlePage } from '@/pages/NewArticlePage'
+import { ReviewPage } from '@/pages/ReviewPage'
+import { VocabularyPage } from '@/pages/VocabularyPage'
 
 function App() {
   return (
@@ -11,6 +14,9 @@ function App() {
         <Routes>
           <Route path="/" element={<ArticleListPage />} />
           <Route path="/articles/:id" element={<ArticleDetailPage />} />
+          <Route path="/vocabulary" element={<VocabularyPage />} />
+          <Route path="/review" element={<ReviewPage />} />
+          <Route path="/new" element={<NewArticlePage />} />
         </Routes>
       </div>
     </BrowserRouter>

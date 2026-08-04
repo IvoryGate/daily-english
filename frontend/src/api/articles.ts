@@ -1,3 +1,4 @@
+import { getLocalArticles } from '@/lib/storage'
 import type { Article, Difficulty } from '@/types'
 
 interface ArticleSummaryDTO {
@@ -36,10 +37,15 @@ async function request<T>(url: string): Promise<T> {
 
 export async function fetchArticles(): Promise<Article[]> {
   const data = await request<ArticleSummaryDTO[]>('/api/articles')
-  return data.map(toArticle)
+  const server = data.map(toArticle)
+  const local = getLocalArticles()
+  return [...server, ...local]
 }
 
 export async function fetchArticle(id: number): Promise<Article | undefined> {
+  if (id < 0) {
+    return getLocalArticles().find((a) => a.id === id)
+  }
   const res = await fetch(`/api/articles/${id}`)
   if (res.status === 404) return undefined
   if (!res.ok) {

@@ -30,6 +30,11 @@ export function ArticleCard({ article }: ArticleCardProps) {
           </CardDescription>
         </CardHeader>
         <div className="flex flex-wrap items-center gap-2 px-(--card-spacing) pt-1">
+          {article.source === 'local' && (
+            <Badge variant="outline" className="border-primary/30 text-primary">
+              本地
+            </Badge>
+          )}
           <Badge className={difficultyStyles[article.difficulty]}>
             {difficultyLabels[article.difficulty]}
           </Badge>
