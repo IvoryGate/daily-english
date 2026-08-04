@@ -1,5 +1,13 @@
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced'
 
+/** 文章来源：内置语料 / 外部刊物（VOA/卫报/大西洋等）/ 本地粘贴 */
+export type ArticleSource =
+  | 'seed'
+  | 'voa'
+  | 'guardian'
+  | 'atlantic'
+  | 'local'
+
 export interface Article {
   id: number
   title: string
@@ -9,8 +17,10 @@ export interface Article {
   tags: string[]
   readTimeMinutes: number
   createdAt: string
-  /** 来源：内置/后端文章（默认），或本地用户添加的文章 */
-  source?: 'server' | 'local'
+  /** 文章来源 */
+  source?: ArticleSource
+  /** 原文链接（爬取的文章） */
+  sourceUrl?: string
 }
 
 export interface VocabEntry {

@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
+import { sourceLabel } from '@/lib/sourceLabels'
 import type { Article } from '@/types'
 
 interface ArticleCardProps {
@@ -30,9 +31,16 @@ export function ArticleCard({ article }: ArticleCardProps) {
           </CardDescription>
         </CardHeader>
         <div className="flex flex-wrap items-center gap-2 px-(--card-spacing) pt-1">
-          {article.source === 'local' && (
-            <Badge variant="outline" className="border-primary/30 text-primary">
-              本地
+          {article.source && article.source !== 'seed' && (
+            <Badge
+              variant="outline"
+              className={
+                article.source === 'local'
+                  ? 'border-primary/30 text-primary'
+                  : 'border-primary/40 text-primary'
+              }
+            >
+              {sourceLabel(article.source)}
             </Badge>
           )}
           <Badge className={difficultyStyles[article.difficulty]}>

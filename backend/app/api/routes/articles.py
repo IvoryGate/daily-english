@@ -18,6 +18,8 @@ def _to_summary(row: Article) -> ArticleSummary:
         tags=row.tags.split(",") if row.tags else [],
         read_time_minutes=row.read_time_minutes,
         created_at=row.created_at,
+        source=row.source,
+        source_url=row.source_url,
     )
 
 
@@ -30,11 +32,15 @@ def _to_detail(row: Article) -> ArticleDetail:
 
 
 @router.get("", response_model=list[ArticleSummary])
-def list_articles(db: Session = Depends(get_db)) -> list[ArticleSummary]:
-    """返回文章列表（摘要信息，不含正文），按创建时间倒序。"""
-    rows = db.scalars(
-        select(Article).order_by(Article.created_at.desc())
-    ).all()
+def list_articles(
+    source: str | None = None,
+    db: Session = Depends(get_db),
+) -> list[ArticleSummary]:
+    """返回文章列表（摘要信息，不含正文），按创建时间倒序。可选按来源过滤。"""
+    query = select(Article)
+    if source:
+        query = query.where(Article.source == source)
+    rows = db.scalars(query.order_by(Article.created_at.desc())).all()
     return [_to_summary(row) for row in rows]
 
 

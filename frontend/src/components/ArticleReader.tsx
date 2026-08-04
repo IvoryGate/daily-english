@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Bookmark, BookmarkCheck, Loader2 } from 'lucide-react'
+import { Bookmark, BookmarkCheck, LoaderCircle } from 'lucide-react'
 import { lookupWord } from '@/lib/dictionary'
 import {
   addVocabulary,
@@ -173,7 +173,7 @@ function WordPanel({ word, x, y, sourceTitle, onClose }: WordPanelProps) {
         <div className="mt-2 max-h-56 overflow-y-auto">
           {loading && (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
               查词中…
             </p>
           )}

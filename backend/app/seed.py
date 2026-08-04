@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from app.database import Base, SessionLocal, engine
+from app.database import Base, SessionLocal, engine, migrate
 from app.mock_data import MOCK_ARTICLES
 from app.models import Article
 
@@ -8,6 +8,7 @@ from app.models import Article
 def seed() -> None:
     """把内置语料灌进数据库。幂等：已有数据则跳过。"""
     Base.metadata.create_all(engine)
+    migrate()
 
     db = SessionLocal()
     try:

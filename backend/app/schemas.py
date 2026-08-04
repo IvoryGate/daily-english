@@ -14,6 +14,8 @@ class ArticleSummary(BaseModel):
     tags: list[str]
     read_time_minutes: int
     created_at: datetime
+    source: str = "seed"
+    source_url: str | None = None
 
 
 class ArticleDetail(ArticleSummary):

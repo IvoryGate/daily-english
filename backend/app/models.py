@@ -17,3 +17,5 @@ class Article(Base):
     tags: Mapped[str] = mapped_column(String(200), default="")
     read_time_minutes: Mapped[int] = mapped_column(Integer, default=2)
     created_at: Mapped[datetime] = mapped_column(DateTime)
+    source: Mapped[str] = mapped_column(String(20), default="seed")
+    source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)

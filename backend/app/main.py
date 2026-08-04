@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import articles
+from app.api.routes import articles, crawler
 from app.seed import seed
 
 
@@ -28,6 +28,7 @@ app.add_middleware(
 )
 
 app.include_router(articles.router)
+app.include_router(crawler.router)
 
 
 @app.get("/api/health")

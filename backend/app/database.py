@@ -25,3 +25,19 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def migrate() -> None:
+    """给已存在的库补上新增列（幂等，SQLite 无 IF NOT EXISTS 列语法）。"""
+    from sqlalchemy import text
+
+    with engine.begin() as conn:
+        columns = {row[1] for row in conn.execute(text("PRAGMA table_info(articles)"))}
+        if not columns:
+            return
+        if "source" not in columns:
+            conn.execute(
+                text("ALTER TABLE articles ADD COLUMN source VARCHAR(20) DEFAULT 'seed'")
+            )
+        if "source_url" not in columns:
+            conn.execute(text("ALTER TABLE articles ADD COLUMN source_url VARCHAR(500)"))

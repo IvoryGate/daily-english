@@ -1,5 +1,5 @@
 import { getLocalArticles } from '@/lib/storage'
-import type { Article, Difficulty } from '@/types'
+import type { Article, ArticleSource, Difficulty } from '@/types'
 
 interface ArticleSummaryDTO {
   id: number
@@ -9,13 +9,15 @@ interface ArticleSummaryDTO {
   tags: string[]
   read_time_minutes: number
   created_at: string
+  source: string
+  source_url: string | null
 }
 
 interface ArticleDetailDTO extends ArticleSummaryDTO {
   content: string
 }
 
-function toArticle(dto: ArticleSummaryDTO): Article {
+function toArticle(dto: ArticleSummaryDTO & { content?: string }): Article {
   return {
     id: dto.id,
     title: dto.title,
@@ -24,6 +26,9 @@ function toArticle(dto: ArticleSummaryDTO): Article {
     tags: dto.tags,
     readTimeMinutes: dto.read_time_minutes,
     createdAt: dto.created_at,
+    content: dto.content,
+    source: (dto.source as ArticleSource) ?? 'seed',
+    sourceUrl: dto.source_url ?? undefined,
   }
 }
 
