@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "skills": {
+    "conventional-commits": {
+      "source": "Adamkadaban/opencode-config",
+      "sourceType": "github",
+      "skillPath": "skills/conventional-commits/SKILL.md",
+      "computedHash": "21e0199cb263ba3795877d6bbaa4d8a5918d99ae2aad464ab82cbbb9532e3757"
+    },
+    "design-taste-frontend": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill/SKILL.md",
+      "computedHash": "6d838b246d0e35d0b53f4f23f98ba7a1dd561937e64f7d0c7553b0928e376c3e"
+    },
+    "github-actions": {
+      "source": "Adamkadaban/opencode-config",
+      "sourceType": "github",
+      "skillPath": "skills/github-actions/SKILL.md",
+      "computedHash": "026a748aa4baffb62f9b2494d5c70fa892a8ba927c9f6fc7dd5ca25fa6d7b40e"
+    },
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/impeccable/SKILL.md",
+      "computedHash": "84ef59fcf8a4c0e4822325a0f756a3e3c762f14e9061518dd4c7d79f3ff503c2"
+    },
+    "typescript-pro": {
+      "source": "farmage/opencode-skills",
+      "sourceType": "github",
+      "skillPath": "skills/typescript-pro/SKILL.md",
+      "computedHash": "c68d5f3af9b43af88efe252cbbbd2f707ec4d1c4cc7c9ffde876833e4a88ed67"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-best-practices/SKILL.md",
+      "computedHash": "ca7b0c0c6e5f2750043f7f0cd72d16ac4e2abc48f9b5500d047a4b77a2506212"
+    },
+    "vite-react-best-practices": {
+      "source": "claudiocebpaz/vite-react-best-practices",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "c383dacdd55b97e7c36641e7d0ac0c094266ef22458dea31c5000cb3e29e3d49"
+    }
+  }
+}
