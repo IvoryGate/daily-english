@@ -94,7 +94,7 @@ def stream_chat_completion(
         return
 
     if resp.status_code != 200:
-        yield {"error": f"模型返回 {resp.status_code}: {resp.text[:200]}"}
+        yield {"error": f"模型返回 {resp.status_code}: {resp.text[:200]}", "status": resp.status_code}
         return
 
     resp.encoding = "utf-8"

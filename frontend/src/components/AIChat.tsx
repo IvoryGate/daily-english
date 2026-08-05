@@ -113,6 +113,11 @@ export function AIChat() {
                   { name: event.name, args: event.args },
                 ],
               }))
+            } else if (event.type === 'retry') {
+              updateAssistant((m) => ({
+                ...m,
+                content: m.content + `\n🔄 ${event.message}`,
+              }))
             } else if (event.type === 'error') {
               updateAssistant((m) => ({ ...m, content: m.content + `\n⚠️ ${event.message}` }))
             }

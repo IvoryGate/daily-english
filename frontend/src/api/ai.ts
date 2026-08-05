@@ -56,6 +56,7 @@ export type AIChatEvent =
   | { type: 'content'; text: string }
   | { type: 'tool'; name: string; args: Record<string, unknown>; result: string }
   | { type: 'done' }
+  | { type: 'retry'; message: string }
   | { type: 'error'; message: string }
 
 /** 流式对话：用 fetch 读 SSE，逐事件回调。 */

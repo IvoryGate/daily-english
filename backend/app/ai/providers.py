@@ -1,6 +1,7 @@
 """模型源解析。
 
 默认走 OpenCode Zen 免费模型（匿名、无需 key），用户可配置 BYOK（OpenAI 兼容）。
+Zen 免费模型有服务端限流，提供备用模型池，限流时自动切换。
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from app.models import User
 
 # Zen 免费模型（公开匿名，安装即可用）
 ZEN_BASE_URL = "https://opencode.ai/zen/v1"
+# 免费模型池：默认第一个，限流时依次尝试后续
 ZEN_FREE_MODELS = [
     "deepseek-v4-flash-free",
     "mimo-v2.5-free",
@@ -21,7 +23,7 @@ ZEN_FREE_MODELS = [
     "laguna-s-2.1-free",
     "longcat-2.0-free",
 ]
-DEFAULT_ZEN_MODEL = "deepseek-v4-flash-free"
+DEFAULT_ZEN_MODEL = ZEN_FREE_MODELS[0]
 
 
 @dataclass
@@ -56,3 +58,18 @@ def resolve_model_source(user: User | None = None) -> ModelSource:
         model=DEFAULT_ZEN_MODEL,
         provider_id="zen-free",
     )
+
+
+def zen_fallback_sources() -> list[ModelSource]:
+    """Zen 免费备用模型源（不含默认模型，供限流时切换）。"""
+    zen_key = os.environ.get("ZEN_API_KEY") or None
+    return [
+        ModelSource(
+            base_url=ZEN_BASE_URL,
+            api_key=zen_key,
+            model=m,
+            provider_id="zen-free",
+        )
+        for m in ZEN_FREE_MODELS
+        if m != DEFAULT_ZEN_MODEL
+    ]
