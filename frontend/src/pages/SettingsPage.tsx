@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { AtSign, BookOpen, Bot, Database, Download, Eraser, KeyRound, Target, UserRound } from 'lucide-react'
+import { AtSign, BookOpen, Bot, Database, Download, Eraser, KeyRound, Laptop, Moon, Palette as PaletteIcon, Sun, Target, UserRound } from 'lucide-react'
 import { changePassword, updateUsername } from '@/api/auth'
 import { fetchAIConfig, updateAIConfig, type AIConfig } from '@/api/ai'
 import { fetchGoals, updateGoals } from '@/api/me'
@@ -8,6 +8,15 @@ import { useUserData } from '@/context/UserDataContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  getPalette,
+  getTheme,
+  PALETTES,
+  setPalette,
+  setTheme,
+  type Palette,
+  type Theme,
+} from '@/lib/theme'
 
 export function SettingsPage() {
   const { user, refreshUser } = useAuth()
@@ -36,6 +45,18 @@ export function SettingsPage() {
   const [aiModel, setAiModel] = useState('gpt-4o-mini')
   const [aiMsg, setAiMsg] = useState<string | null>(null)
   const [aiError, setAiError] = useState<string | null>(null)
+
+  const [palette, setPaletteState] = useState<Palette>(getPalette)
+  const [theme, setThemeState] = useState<Theme>(getTheme)
+
+  const applyPalette = (p: Palette) => {
+    setPalette(p)
+    setPaletteState(p)
+  }
+  const applyTheme = (t: Theme) => {
+    setTheme(t)
+    setThemeState(t)
+  }
 
   useEffect(() => {
     if (!user) return
@@ -286,6 +307,85 @@ export function SettingsPage() {
           </form>
           {goalMsg && <p className="mt-2 text-xs text-emerald-600">{goalMsg}</p>}
           {goalError && <p className="mt-2 text-xs text-destructive">{goalError}</p>}
+        </section>
+
+        <section className="rounded-xl border bg-card p-5 text-card-foreground">
+          <h2 className="flex items-center gap-2 text-base font-semibold">
+            <PaletteIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+            外观
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            选择配色风格与明暗模式，即时生效
+          </p>
+
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">配色风格</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {PALETTES.map((p) => {
+                const active = palette === p.value
+                return (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => applyPalette(p.value)}
+                    className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
+                      active
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:bg-muted/40'
+                    }`}
+                    aria-pressed={active}
+                  >
+                    <span
+                      className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white"
+                      style={{
+                        background:
+                          p.value === 'claude'
+                            ? '#cc785c'
+                            : '#0075de',
+                      }}
+                    >
+                      <PaletteIcon className="size-4" aria-hidden="true" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-medium">{p.label}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {p.desc}
+                      </span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">明暗模式</p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {[
+                { value: 'light' as Theme, label: '浅色', icon: Sun },
+                { value: 'dark' as Theme, label: '深色', icon: Moon },
+                { value: 'system' as Theme, label: '跟随系统', icon: Laptop },
+              ].map(({ value, label, icon: Icon }) => {
+                const active = theme === value
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => applyTheme(value)}
+                    className={`flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                      active
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-border text-muted-foreground hover:bg-muted/40'
+                    }`}
+                    aria-pressed={active}
+                  >
+                    <Icon className="size-4" aria-hidden="true" />
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </section>
 
         <section className="rounded-xl border bg-card p-5 text-card-foreground">

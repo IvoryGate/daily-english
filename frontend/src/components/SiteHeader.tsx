@@ -1,9 +1,17 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router'
-import { BookOpen, Laptop, LayoutDashboard, Moon, Sun } from 'lucide-react'
+import { BookOpen, Laptop, LayoutDashboard, Moon, Palette, Sun } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
-import { getTheme, setTheme, type Theme } from '@/lib/theme'
+import {
+  getPalette,
+  getTheme,
+  PALETTES,
+  setPalette,
+  setTheme,
+  type Palette as PaletteType,
+  type Theme,
+} from '@/lib/theme'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-md px-3 py-1.5 text-sm transition-colors ${
@@ -22,6 +30,7 @@ export function SiteHeader() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [theme, setThemeState] = useState<Theme>(getTheme)
+  const [palette, setPaletteState] = useState<PaletteType>(getPalette)
 
   const handleLogout = () => {
     logout()
@@ -35,7 +44,15 @@ export function SiteHeader() {
     setThemeState(next.value)
   }
 
+  const cyclePalette = () => {
+    const idx = PALETTES.findIndex((p) => p.value === palette)
+    const next = PALETTES[(idx + 1) % PALETTES.length]
+    setPalette(next.value)
+    setPaletteState(next.value)
+  }
+
   const current = THEMES.find((t) => t.value === theme) ?? THEMES[0]
+  const currentPalette = PALETTES.find((p) => p.value === palette) ?? PALETTES[0]
 
   return (
     <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
@@ -64,9 +81,19 @@ export function SiteHeader() {
           <Button
             size="icon-sm"
             variant="ghost"
+            onClick={cyclePalette}
+            title={`配色：${currentPalette.label}（点击切换）`}
+            aria-label={`当前配色：${currentPalette.label}，点击切换`}
+            className="ml-1"
+          >
+            <Palette className="size-4" aria-hidden="true" />
+          </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
             onClick={cycleTheme}
-            title={`主题：${current.label}（点击切换）`}
-            aria-label={`当前主题：${current.label}，点击切换`}
+            title={`明暗：${current.label}（点击切换）`}
+            aria-label={`当前明暗：${current.label}，点击切换`}
             className="ml-1"
           >
             {current.icon}
