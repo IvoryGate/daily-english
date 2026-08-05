@@ -146,6 +146,16 @@ export interface HeatmapDay {
   reviews: number
 }
 
+export interface CurvePoint {
+  date: string
+  total: number
+}
+
+export interface TrendPoint {
+  date: string
+  count: number
+}
+
 export interface AchievementInfo {
   key: string
   name: string
@@ -181,6 +191,9 @@ export interface StatsData {
   today: TodayProgress
   achievements: AchievementInfo[]
   heatmap: HeatmapDay[]
+  vocabulary_curve: CurvePoint[]
+  review_trend: TrendPoint[]
+  mastered_vocab: number
 }
 
 export async function fetchStats(): Promise<StatsData> {

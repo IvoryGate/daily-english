@@ -280,7 +280,10 @@ from app.gamification import (  # noqa: E402
     get_level,
     heatmap_data,
     local_today,
+    mastered_vocab,
+    review_trend,
     total_counts,
+    vocabulary_curve,
 )
 from app.models import Achievement, ReviewHistory  # noqa: E402
 from app.schemas import DailyGoalsIn, DailyGoalsOut, ReviewIn  # noqa: E402
@@ -385,6 +388,9 @@ def get_stats(
         "today": today,
         "achievements": achievements,
         "heatmap": heatmap_data(db, user),
+        "vocabulary_curve": vocabulary_curve(db, user),
+        "review_trend": review_trend(db, user),
+        "mastered_vocab": mastered_vocab(db, user),
     }
 
 

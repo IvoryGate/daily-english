@@ -215,3 +215,67 @@ def heatmap_data(db: Session, user: User, days: int = 182) -> list[dict]:
             }
         )
     return result
+
+
+def vocabulary_curve(db: Session, user: User, days: int = 90) -> list[dict]:
+    """近 days 天的每日累计生词量曲线（按 added_at 累计）。"""
+    since = datetime.combine(
+        date.fromordinal(local_today().toordinal() - days + 1), datetime.min.time()
+    )
+    rows = db.execute(
+        select(func.date(VocabularyEntry.added_at), func.count())
+        .where(
+            VocabularyEntry.user_id == user.id,
+            VocabularyEntry.added_at >= since,
+        )
+        .group_by(func.date(VocabularyEntry.added_at))
+    ).all()
+    daily_map = {str(k): v for k, v in rows}
+
+    result = []
+    cumulative = 0
+    start = date.fromordinal(local_today().toordinal() - days + 1)
+    for i in range(days):
+        d = date.fromordinal(start.toordinal() + i)
+        key = d.isoformat()
+        cumulative += daily_map.get(key, 0)
+        result.append({"date": key, "total": cumulative})
+    return result
+
+
+def review_trend(db: Session, user: User, days: int = 30) -> list[dict]:
+    """近 days 天每日复习次数趋势。"""
+    since = datetime.combine(
+        date.fromordinal(local_today().toordinal() - days + 1), datetime.min.time()
+    )
+    rows = db.execute(
+        select(func.date(ReviewHistory.reviewed_at), func.count())
+        .where(
+            ReviewHistory.user_id == user.id,
+            ReviewHistory.reviewed_at >= since,
+        )
+        .group_by(func.date(ReviewHistory.reviewed_at))
+    ).all()
+    daily_map = {str(k): v for k, v in rows}
+
+    result = []
+    start = date.fromordinal(local_today().toordinal() - days + 1)
+    for i in range(days):
+        d = date.fromordinal(start.toordinal() + i)
+        key = d.isoformat()
+        result.append({"date": key, "count": daily_map.get(key, 0)})
+    return result
+
+
+def mastered_vocab(db: Session, user: User) -> int:
+    """已掌握生词数：FSRS state>=2 且 reps>=3 视为掌握。"""
+    rows = db.scalars(
+        select(VocabularyEntry.card).where(VocabularyEntry.user_id == user.id)
+    ).all()
+    mastered = 0
+    for card in rows:
+        if not isinstance(card, dict):
+            continue
+        if (card.get("state") or 0) >= 2 and (card.get("reps") or 0) >= 3:
+            mastered += 1
+    return mastered

@@ -8,14 +8,20 @@ import {
   Eraser,
   Flame,
   Library,
-  LineChart,
+  LineChart as LineChartIcon,
+  RotateCcw,
   Sparkles,
   Target,
   TrendingUp,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { fetchArticles } from '@/api/articles'
-import { fetchStats, type StatsData } from '@/api/me'
+import {
+  fetchStats,
+  type CurvePoint,
+  type StatsData,
+  type TrendPoint,
+} from '@/api/me'
 import { useAuth } from '@/context/AuthContext'
 import { useUserData } from '@/context/UserDataContext'
 import { isDue } from '@/lib/fsrs'
@@ -109,6 +115,97 @@ function Heatmap({
         )
       })}
     </div>
+  )
+}
+
+/** 轻量 SVG 折线图（词汇量曲线） */
+function LineChart({
+  data,
+  color = 'stroke-primary',
+}: {
+  data: CurvePoint[]
+  color?: string
+}) {
+  const width = 600
+  const height = 120
+  const pad = 6
+  const n = data.length
+  const max = Math.max(1, ...data.map((d) => d.total))
+  const stepX = n > 1 ? (width - pad * 2) / (n - 1) : 0
+  const points = data
+    .map((d, i) => {
+      const x = pad + i * stepX
+      const y = height - pad - (d.total / max) * (height - pad * 2)
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="h-28 w-full"
+      role="img"
+      aria-label="词汇量增长曲线"
+      preserveAspectRatio="none"
+    >
+      <polyline
+        points={points}
+        fill="none"
+        className={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {data.filter((_, i) => i % 10 === 0 || i === n - 1).map((d, i) => (
+        <circle
+          key={`${d.date}-${i}`}
+          cx={pad + i * 10 * stepX}
+          cy={height - pad - (d.total / max) * (height - pad * 2)}
+          r={2.5}
+          className="fill-primary"
+        />
+      ))}
+    </svg>
+  )
+}
+
+/** 轻量 SVG 柱状图（复习趋势） */
+function BarChart({ data }: { data: TrendPoint[] }) {
+  const width = 600
+  const height = 120
+  const pad = 6
+  const n = data.length
+  const max = Math.max(1, ...data.map((d) => d.count))
+  const slot = (width - pad * 2) / n
+  const barW = Math.max(2, slot * 0.7)
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="h-28 w-full"
+      role="img"
+      aria-label="每日复习次数柱状图"
+      preserveAspectRatio="none"
+    >
+      {data.map((d, i) => {
+        const x = pad + i * slot + (slot - barW) / 2
+        const h = (d.count / max) * (height - pad * 2)
+        const y = height - pad - h
+        return (
+          <rect
+            key={d.date}
+            x={x}
+            y={y}
+            width={barW}
+            height={Math.max(h, d.count > 0 ? 2 : 0)}
+            className="fill-primary/50"
+            rx={1}
+          >
+            <title>{`${d.date}：复习 ${d.count} 次`}</title>
+          </rect>
+        )
+      })}
+    </svg>
   )
 }
 
@@ -321,7 +418,7 @@ export function DashboardPage() {
           {/* 累计统计卡 */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <StatCard
-              icon={<LineChart className="size-4" aria-hidden="true" />}
+              icon={<LineChartIcon className="size-4" aria-hidden="true" />}
               label="累计阅读"
               value={`${localStats.totalRead} 篇`}
             />
@@ -380,6 +477,46 @@ export function DashboardPage() {
                 <Heatmap data={stats.heatmap} />
                 <p className="mt-2 text-xs text-muted-foreground">
                   近 6 个月的学习足迹，颜色越深当天学得越多
+                </p>
+              </div>
+            </section>
+          )}
+
+          {/* 词汇量增长曲线 */}
+          {stats && stats.vocabulary_curve.length > 0 && (
+            <section className="mt-8">
+              <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+                <TrendingUp className="size-5 text-primary" aria-hidden="true" />
+                词汇量增长
+              </h2>
+              <div className="rounded-xl border bg-card p-4 text-card-foreground">
+                <div className="flex items-baseline gap-3">
+                  <p className="text-2xl font-bold tracking-tight">
+                    {stats.vocab_count}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    生词，其中已掌握 {stats.mastered_vocab} 词
+                  </p>
+                </div>
+                <LineChart data={stats.vocabulary_curve} />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  近 3 个月生词量累计曲线
+                </p>
+              </div>
+            </section>
+          )}
+
+          {/* 复习趋势 */}
+          {stats && stats.review_trend.length > 0 && (
+            <section className="mt-8">
+              <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+                <RotateCcw className="size-5 text-primary" aria-hidden="true" />
+                复习趋势
+              </h2>
+              <div className="rounded-xl border bg-card p-4 text-card-foreground">
+                <BarChart data={stats.review_trend} />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  近 30 天每日复习次数
                 </p>
               </div>
             </section>
