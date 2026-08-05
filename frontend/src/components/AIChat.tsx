@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Bot, LoaderCircle, Search, Send, Sparkles, X } from 'lucide-react'
 import {
   streamChat,
@@ -23,6 +24,18 @@ const TOOL_LABELS: Record<string, string> = {
   lookup_word: '查词',
   get_learning_stats: '读取学习数据',
   save_note: '保存笔记',
+}
+
+/** 思考中指示器：字符旋转加载（-\|/） */
+function Thinking() {
+  return (
+    <span className="inline-flex items-center gap-2 text-muted-foreground">
+      <span className="thinking-char" aria-hidden="true">
+        |
+      </span>
+      <span className="text-xs">思考中…</span>
+    </span>
+  )
 }
 
 export function AIChat() {
@@ -170,7 +183,7 @@ export function AIChat() {
             className="absolute inset-0 bg-background/40 backdrop-blur-[2px]"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 top-0 flex h-full w-[400px] max-w-[calc(100vw-1rem)] flex-col border-l bg-card shadow-2xl">
+          <div className="absolute right-0 top-0 flex h-full w-full max-w-[540px] flex-col border-l bg-card shadow-2xl sm:w-[440px] md:w-[520px] lg:w-[540px]">
             <div className="flex items-center justify-between border-b px-4 py-3">
               <div className="flex items-center gap-2">
                 <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -237,7 +250,11 @@ export function AIChat() {
                   )}
                   {m.role === 'assistant' ? (
                     <div className="ai-markdown">
-                      <ReactMarkdown>{m.content || (busy && i === messages.length - 1 ? '…' : '')}</ReactMarkdown>
+                      {m.content ? (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                      ) : busy && i === messages.length - 1 ? (
+                        <Thinking />
+                      ) : null}
                     </div>
                   ) : (
                     <span className="whitespace-pre-wrap">{m.content}</span>

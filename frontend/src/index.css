@@ -148,8 +148,7 @@
 }
 .ai-markdown > :last-child {
   margin-bottom: 0;
-}
-.ai-markdown p {
+}.ai-markdown p {
   margin: 0.5em 0;
 }
 .ai-markdown ul,
@@ -257,4 +256,45 @@ html[data-palette='notion'].dark {
   --sidebar-accent-foreground: oklch(0.93 0.01 60);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.68 0.14 250);
+}
+
+/* ---- AI 助手：思考中字符旋转动画（-\\|/） ---- */
+@keyframes thinking-char {
+  0% {
+    content: '-';
+  }
+  25% {
+    content: '\\';
+  }
+  50% {
+    content: '|';
+  }
+  75% {
+    content: '/';
+  }
+}
+.thinking-char::before {
+  content: '|';
+  animation: thinking-char 0.8s steps(1) infinite;
+}
+.thinking-char {
+  @apply font-mono text-sm;
+}
+
+/* ---- AI 助手：Markdown 表格 + 横向滚动 ---- */
+.ai-markdown table {
+  @apply my-2 w-full border-collapse text-sm;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.ai-markdown thead {
+  @apply bg-muted;
+}
+.ai-markdown th,
+.ai-markdown td {
+  @apply border border-border px-3 py-1.5 text-left;
+}
+.ai-markdown th {
+  @apply font-semibold;
 }
