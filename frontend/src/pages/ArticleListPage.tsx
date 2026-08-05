@@ -185,24 +185,26 @@ export function ArticleListPage() {
         <section className="mb-8">
           <Link
             to={`/articles/${dailyPick.id}`}
-            className="group relative block overflow-hidden rounded-3xl border border-primary/15 transition-all hover:border-primary/30 hover:shadow-lg"
+            className="group relative block overflow-hidden rounded-2xl border border-border bg-background transition-all hover:border-primary/30 hover:shadow-lg"
           >
-            <ArticleThumb
-              article={dailyPick}
-              className="h-64 w-full transition-transform duration-500 group-hover:scale-105 md:h-80"
-            />
-            <div className="relative bg-gradient-to-br from-primary/10 via-background to-background p-8">
+            <div className="overflow-hidden">
+              <ArticleThumb
+                article={dailyPick}
+                className="h-64 w-full origin-top transition-transform duration-500 group-hover:scale-105 md:h-80"
+              />
+            </div>
+            <div className="border-t border-border bg-background p-6">
               <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
                 <Sparkles className="size-4" aria-hidden="true" />
                 今日推荐
               </div>
-              <h2 className="mt-4 max-w-2xl font-reading text-3xl font-bold leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary">
+              <h2 className="mt-3 max-w-2xl font-reading text-2xl font-bold leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary md:text-3xl">
                 {dailyPick.title}
               </h2>
-              <p className="mt-3 max-w-2xl line-clamp-3 text-sm leading-6 text-muted-foreground">
+              <p className="mt-2 max-w-2xl line-clamp-2 text-sm leading-6 text-muted-foreground">
                 {dailyPick.excerpt}
               </p>
-              <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <Badge className={difficultyStyles[dailyPick.difficulty]}>
                   {difficultyLabels[dailyPick.difficulty]}
                 </Badge>

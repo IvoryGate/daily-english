@@ -14,6 +14,7 @@ import {
   VolumeX,
 } from 'lucide-react'
 import { ArticleReader } from '@/components/ArticleReader'
+import { ArticleThumb } from '@/components/ArticleThumb'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -227,6 +228,12 @@ export function ArticleDetailPage() {
 
       <article>
         <header className="mb-6">
+          <div className="mb-5 overflow-hidden rounded-xl border border-border">
+            <ArticleThumb
+              article={article}
+              className="aspect-[21/9] w-full md:aspect-[3/1]"
+            />
+          </div>
           <h1 className="font-reading text-3xl font-bold leading-snug tracking-tight">
             {article.title}
           </h1>
