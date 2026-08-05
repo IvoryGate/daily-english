@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router'
-import { BookOpen, Laptop, Moon, Sun } from 'lucide-react'
+import { BookOpen, Laptop, LayoutDashboard, Moon, Sun } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { getTheme, setTheme, type Theme } from '@/lib/theme'
@@ -54,18 +54,11 @@ export function SiteHeader() {
             文章
           </NavLink>
           {user && (
-            <NavLink to="/dashboard" className={navLinkClass}>
-              我的学习
-            </NavLink>
-          )}
-          {user && (
-            <NavLink to="/vocabulary" className={navLinkClass}>
-              生词本
-            </NavLink>
-          )}
-          {user && (
-            <NavLink to="/review" className={navLinkClass}>
-              复习
+            <NavLink to="/account/dashboard" className={navLinkClass}>
+              <span className="flex items-center gap-1.5">
+                <LayoutDashboard className="size-4" aria-hidden="true" />
+                个人中心
+              </span>
             </NavLink>
           )}
           <Button
@@ -78,18 +71,8 @@ export function SiteHeader() {
           >
             {current.icon}
           </Button>
-          <Button size="sm" className="ml-1" asChild>
-            <Link to="/new">添加文章</Link>
-          </Button>
           {user ? (
             <div className="ml-1 flex items-center gap-1">
-              <NavLink
-                to="/settings"
-                className="hidden max-w-24 truncate rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground sm:inline"
-                title="个人设置"
-              >
-                {user.username}
-              </NavLink>
               <Button size="sm" variant="ghost" onClick={handleLogout}>
                 退出
               </Button>

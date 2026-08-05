@@ -113,7 +113,7 @@ export function ReviewPage() {
           复习了 {queue.length} 个生词
         </p>
         <Button className="mt-6" asChild>
-          <Link to="/vocabulary">查看生词本</Link>
+          <Link to="/account/vocabulary">查看生词本</Link>
         </Button>
       </main>
     )

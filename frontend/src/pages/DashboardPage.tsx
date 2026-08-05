@@ -16,12 +16,12 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { fetchArticles } from '@/api/articles'
+import { fetchStats, type StatsData } from '@/api/me'
 import {
-  fetchStats,
-  type CurvePoint,
-  type StatsData,
-  type TrendPoint,
-} from '@/api/me'
+  BarChart,
+  Heatmap,
+  LineChart,
+} from '@/components/account/charts'
 import { useAuth } from '@/context/AuthContext'
 import { useUserData } from '@/context/UserDataContext'
 import { isDue } from '@/lib/fsrs'
@@ -75,137 +75,6 @@ function ProgressBar({
         style={{ width: `${pct}%` }}
       />
     </div>
-  )
-}
-
-/** GitHub 风格热力图 */
-function Heatmap({
-  data,
-}: {
-  data: StatsData['heatmap']
-}) {
-  const max = Math.max(1, ...data.map((d) => d.reads + d.reviews))
-  const intensity = (reads: number, reviews: number): number => {
-    const v = reads + reviews
-    if (v === 0) return 0
-    const ratio = v / max
-    if (ratio < 0.2) return 1
-    if (ratio < 0.5) return 2
-    if (ratio < 0.8) return 3
-    return 4
-  }
-  const levelClass = [
-    'bg-muted',
-    'bg-primary/25',
-    'bg-primary/50',
-    'bg-primary/75',
-    'bg-primary',
-  ]
-
-  return (
-    <div className="flex flex-wrap gap-1">
-      {data.map((d) => {
-        const lvl = intensity(d.reads, d.reviews)
-        return (
-          <span
-            key={d.date}
-            title={`${d.date}：读 ${d.reads} 篇，复习 ${d.reviews} 次`}
-            className={`size-3 rounded-[3px] ${levelClass[lvl]}`}
-          />
-        )
-      })}
-    </div>
-  )
-}
-
-/** 轻量 SVG 折线图（词汇量曲线） */
-function LineChart({
-  data,
-  color = 'stroke-primary',
-}: {
-  data: CurvePoint[]
-  color?: string
-}) {
-  const width = 600
-  const height = 120
-  const pad = 6
-  const n = data.length
-  const max = Math.max(1, ...data.map((d) => d.total))
-  const stepX = n > 1 ? (width - pad * 2) / (n - 1) : 0
-  const points = data
-    .map((d, i) => {
-      const x = pad + i * stepX
-      const y = height - pad - (d.total / max) * (height - pad * 2)
-      return `${x.toFixed(1)},${y.toFixed(1)}`
-    })
-    .join(' ')
-
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="h-28 w-full"
-      role="img"
-      aria-label="词汇量增长曲线"
-      preserveAspectRatio="none"
-    >
-      <polyline
-        points={points}
-        fill="none"
-        className={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {data.filter((_, i) => i % 10 === 0 || i === n - 1).map((d, i) => (
-        <circle
-          key={`${d.date}-${i}`}
-          cx={pad + i * 10 * stepX}
-          cy={height - pad - (d.total / max) * (height - pad * 2)}
-          r={2.5}
-          className="fill-primary"
-        />
-      ))}
-    </svg>
-  )
-}
-
-/** 轻量 SVG 柱状图（复习趋势） */
-function BarChart({ data }: { data: TrendPoint[] }) {
-  const width = 600
-  const height = 120
-  const pad = 6
-  const n = data.length
-  const max = Math.max(1, ...data.map((d) => d.count))
-  const slot = (width - pad * 2) / n
-  const barW = Math.max(2, slot * 0.7)
-
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="h-28 w-full"
-      role="img"
-      aria-label="每日复习次数柱状图"
-      preserveAspectRatio="none"
-    >
-      {data.map((d, i) => {
-        const x = pad + i * slot + (slot - barW) / 2
-        const h = (d.count / max) * (height - pad * 2)
-        const y = height - pad - h
-        return (
-          <rect
-            key={d.date}
-            x={x}
-            y={y}
-            width={barW}
-            height={Math.max(h, d.count > 0 ? 2 : 0)}
-            className="fill-primary/50"
-            rx={1}
-          >
-            <title>{`${d.date}：复习 ${d.count} 次`}</title>
-          </rect>
-        )
-      })}
-    </svg>
   )
 }
 
@@ -345,7 +214,9 @@ export function DashboardPage() {
                   <div className="text-center">
                     <p
                       className={`text-2xl font-bold ${
-                        today.checked_in ? 'text-emerald-600' : 'text-muted-foreground'
+                        today.checked_in
+                          ? 'text-emerald-600'
+                          : 'text-muted-foreground'
                       }`}
                     >
                       {today.checked_in ? '已达成' : '未达成'}
@@ -403,10 +274,10 @@ export function DashboardPage() {
                   <Link to="/">去阅读</Link>
                 </Button>
                 <Button size="sm" variant="outline" asChild>
-                  <Link to="/review">去复习</Link>
+                  <Link to="/account/review">去复习</Link>
                 </Button>
                 <Button size="sm" variant="ghost" asChild>
-                  <Link to="/settings">
+                  <Link to="/account/settings">
                     <Target className="size-4" aria-hidden="true" />
                     调整目标
                   </Link>
@@ -453,7 +324,10 @@ export function DashboardPage() {
             <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
               <Sparkles className="size-4 text-primary" aria-hidden="true" />
               <span>有 {localStats.dueCount} 个生词待复习</span>
-              <Link to="/review" className="ml-auto text-primary hover:underline">
+              <Link
+                to="/account/review"
+                className="ml-auto text-primary hover:underline"
+              >
                 去复习
               </Link>
             </div>
@@ -469,56 +343,61 @@ export function DashboardPage() {
             </div>
           )}
 
-          {/* 热力图 */}
-          {stats && stats.heatmap.length > 0 && (
-            <section className="mt-8">
-              <h2 className="mb-3 text-lg font-semibold">学习热力图</h2>
-              <div className="rounded-xl border bg-card p-4 text-card-foreground">
-                <Heatmap data={stats.heatmap} />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  近 6 个月的学习足迹，颜色越深当天学得越多
-                </p>
-              </div>
-            </section>
-          )}
-
-          {/* 词汇量增长曲线 */}
-          {stats && stats.vocabulary_curve.length > 0 && (
-            <section className="mt-8">
-              <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
-                <TrendingUp className="size-5 text-primary" aria-hidden="true" />
-                词汇量增长
-              </h2>
-              <div className="rounded-xl border bg-card p-4 text-card-foreground">
-                <div className="flex items-baseline gap-3">
-                  <p className="text-2xl font-bold tracking-tight">
-                    {stats.vocab_count}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    生词，其中已掌握 {stats.mastered_vocab} 词
-                  </p>
+          {/* 学习图表 */}
+          {stats && (
+            <section className="mt-8 flex flex-col gap-6">
+              {stats.heatmap.length > 0 && (
+                <div>
+                  <h2 className="mb-3 text-lg font-semibold">学习热力图</h2>
+                  <div className="rounded-xl border bg-card p-4 text-card-foreground">
+                    <Heatmap data={stats.heatmap} />
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      近 6 个月的学习足迹，颜色越深当天学得越多
+                    </p>
+                  </div>
                 </div>
-                <LineChart data={stats.vocabulary_curve} />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  近 3 个月生词量累计曲线
-                </p>
-              </div>
-            </section>
-          )}
+              )}
 
-          {/* 复习趋势 */}
-          {stats && stats.review_trend.length > 0 && (
-            <section className="mt-8">
-              <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
-                <RotateCcw className="size-5 text-primary" aria-hidden="true" />
-                复习趋势
-              </h2>
-              <div className="rounded-xl border bg-card p-4 text-card-foreground">
-                <BarChart data={stats.review_trend} />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  近 30 天每日复习次数
-                </p>
-              </div>
+              {stats.vocabulary_curve.length > 0 && (
+                <div>
+                  <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+                    <TrendingUp
+                      className="size-5 text-primary"
+                      aria-hidden="true"
+                    />
+                    词汇量增长
+                  </h2>
+                  <div className="rounded-xl border bg-card p-4 text-card-foreground">
+                    <div className="flex items-baseline gap-3">
+                      <p className="text-2xl font-bold tracking-tight">
+                        {stats.vocab_count}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        生词，其中已掌握 {stats.mastered_vocab} 词
+                      </p>
+                    </div>
+                    <LineChart data={stats.vocabulary_curve} />
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      近 3 个月生词量累计曲线
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {stats.review_trend.length > 0 && (
+                <div>
+                  <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+                    <RotateCcw className="size-5 text-primary" aria-hidden="true" />
+                    复习趋势
+                  </h2>
+                  <div className="rounded-xl border bg-card p-4 text-card-foreground">
+                    <BarChart data={stats.review_trend} />
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      近 30 天每日复习次数
+                    </p>
+                  </div>
+                </div>
+              )}
             </section>
           )}
 
@@ -534,7 +413,9 @@ export function DashboardPage() {
                   <li
                     key={a.key}
                     className={`flex flex-col items-center gap-1 rounded-xl border p-3 text-center ${
-                      a.unlocked ? 'border-primary/20 bg-card' : 'border-dashed opacity-50'
+                      a.unlocked
+                        ? 'border-primary/20 bg-card'
+                        : 'border-dashed opacity-50'
                     }`}
                     title={a.desc}
                   >
@@ -594,7 +475,11 @@ export function DashboardPage() {
                           {article?.title ?? `文章 #${id}`}
                         </span>
                         <span
-                          className={`shrink-0 text-xs ${article ? difficultyStyles[article.difficulty] : 'text-muted-foreground'}`}
+                          className={`shrink-0 text-xs ${
+                            article
+                              ? difficultyStyles[article.difficulty]
+                              : 'text-muted-foreground'
+                          }`}
                         >
                           {article
                             ? difficultyLabels[article.difficulty]
@@ -602,9 +487,7 @@ export function DashboardPage() {
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {new Date(
-                          reading[id].readAt,
-                        ).toLocaleString('zh-CN', {
+                        {new Date(reading[id].readAt).toLocaleString('zh-CN', {
                           month: 'short',
                           day: 'numeric',
                           hour: '2-digit',
@@ -623,7 +506,7 @@ export function DashboardPage() {
               <Link to="/">继续阅读</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link to="/review">复习生词</Link>
+              <Link to="/account/review">复习生词</Link>
             </Button>
           </div>
         </>

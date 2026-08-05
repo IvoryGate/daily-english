@@ -125,7 +125,7 @@ export function VocabularyPage() {
           />
           {dueCount > 0 && (
             <Button size="sm" asChild>
-              <Link to="/review">{dueCount} 个待复习</Link>
+              <Link to="/account/review">{dueCount} 个待复习</Link>
             </Button>
           )}
         </div>
