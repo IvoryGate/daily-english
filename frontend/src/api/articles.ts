@@ -20,6 +20,7 @@ interface ArticleSummaryDTO {
   created_at: string
   source: string
   source_url: string | null
+  image_url: string | null
 }
 
 interface ArticleDetailDTO extends ArticleSummaryDTO {
@@ -38,6 +39,7 @@ function toArticle(dto: ArticleSummaryDTO & { content?: string }): Article {
     content: dto.content,
     source: (dto.source as ArticleSource) ?? 'seed',
     sourceUrl: dto.source_url ?? undefined,
+    imageUrl: dto.image_url ?? undefined,
   }
 }
 

@@ -16,6 +16,7 @@ class ArticleSummary(BaseModel):
     created_at: datetime
     source: str = "seed"
     source_url: str | None = None
+    image_url: str | None = None
 
 
 class ArticleDetail(ArticleSummary):

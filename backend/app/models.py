@@ -28,6 +28,8 @@ class Article(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
     source: Mapped[str] = mapped_column(String(20), default="seed")
     source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # 文章配图（来自原文页 og:image）
+    image_url: Mapped[str | None] = mapped_column(String(800), nullable=True)
 
 
 class User(Base):

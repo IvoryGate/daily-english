@@ -20,6 +20,7 @@ def _to_summary(row: Article) -> ArticleSummary:
         created_at=row.created_at,
         source=row.source,
         source_url=row.source_url,
+        image_url=row.image_url,
     )
 
 

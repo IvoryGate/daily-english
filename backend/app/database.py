@@ -41,6 +41,8 @@ def migrate() -> None:
             )
         if "source_url" not in columns:
             conn.execute(text("ALTER TABLE articles ADD COLUMN source_url VARCHAR(500)"))
+        if "image_url" not in columns:
+            conn.execute(text("ALTER TABLE articles ADD COLUMN image_url VARCHAR(800)"))
 
     with engine.begin() as conn:
         user_columns = {

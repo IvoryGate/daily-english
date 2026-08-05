@@ -28,6 +28,8 @@ export interface Article {
   source?: ArticleSource
   /** 原文链接（爬取的文章） */
   sourceUrl?: string
+  /** 文章配图 */
+  imageUrl?: string
 }
 
 export interface VocabEntry {

@@ -92,6 +92,7 @@ class AtlanticProvider(CrawlerProvider):
                         source_url=url,
                         difficulty=self.default_difficulty,
                         tags=section,
+                        image_url=self.extract_og_image(soup),
                     )
                 )
         return result

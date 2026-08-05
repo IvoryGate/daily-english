@@ -82,6 +82,7 @@ def crawl(
                     created_at=now_iso(),
                     source=item.source,
                     source_url=item.source_url,
+                    image_url=item.image_url or None,
                 )
             )
             existing.add(item.source_url)

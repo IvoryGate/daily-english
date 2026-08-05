@@ -53,6 +53,7 @@ class VOAProvider(CrawlerProvider):
                         source_url=url,
                         difficulty=difficulty,
                         tags=column_name,
+                        image_url=self.extract_og_image(soup),
                     )
                 )
         return result

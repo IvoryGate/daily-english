@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { ArticleThumb } from '@/components/ArticleThumb'
 import { useUserData } from '@/context/UserDataContext'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
 import { sourceLabel } from '@/lib/sourceLabels'
@@ -33,8 +34,12 @@ export function ArticleCard({ article }: ArticleCardProps) {
     <Link to={`/articles/${article.id}`} className="relative block h-full">
       <Card
         size="sm"
-        className="flex h-full flex-col shadow-sm transition-all hover:border-primary/30 hover:bg-muted/30 hover:shadow-md"
+        className="flex h-full flex-col overflow-hidden shadow-sm transition-all hover:border-primary/30 hover:bg-muted/30 hover:shadow-md"
       >
+        <ArticleThumb
+          article={article}
+          className="aspect-[16/9] w-full"
+        />
         <CardHeader>
           <CardTitle className="line-clamp-2 font-reading text-base font-bold leading-snug">
             {article.title}
@@ -77,7 +82,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
           event.stopPropagation()
           void handleToggle()
         }}
-        className="absolute right-3 top-3 rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-accent hover:text-primary"
+        className="absolute right-3 top-3 rounded-md bg-background/70 p-1.5 text-muted-foreground/60 backdrop-blur transition-colors hover:bg-accent hover:text-primary"
       >
         <Bookmark
           className={`size-4 ${bookmarked ? 'fill-primary text-primary' : ''}`}

@@ -14,6 +14,7 @@ class RawArticle:
         source_url: str,
         difficulty: str,
         tags: str,
+        image_url: str = "",
     ) -> None:
         self.title = title
         self.paragraphs = paragraphs
@@ -21,6 +22,7 @@ class RawArticle:
         self.source_url = source_url
         self.difficulty = difficulty
         self.tags = tags
+        self.image_url = image_url
 
 
 class CrawlerProvider(ABC):
@@ -47,3 +49,20 @@ class CrawlerProvider(ABC):
 
     def fetch_raw(self, url: str) -> str:
         return self.fetcher.get(url).text
+
+    def extract_og_image(self, soup: BeautifulSoup) -> str:
+        """从页面提取 og:image（社交分享图），作为文章配图。"""
+        for selector in [
+            'meta[property="og:image"][content]',
+            'meta[name="twitter:image"][content]',
+        ]:
+            meta = soup.select_one(selector)
+            if meta and meta.get("content"):
+                return meta["content"].strip()
+        # 兜底：文章正文第一张图
+        img = soup.select_one(".wsw img, article img, .article-body img")
+        if img:
+            src = img.get("src") or img.get("data-src") or ""
+            if src:
+                return src.strip()
+        return ""

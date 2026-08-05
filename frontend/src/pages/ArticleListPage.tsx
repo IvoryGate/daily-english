@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { LoaderCircle, Search, Sparkles, Shuffle, Wand2 } from 'lucide-react'
 import { ArticleCard } from '@/components/ArticleCard'
+import { ArticleThumb } from '@/components/ArticleThumb'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -184,27 +185,33 @@ export function ArticleListPage() {
         <section className="mb-8">
           <Link
             to={`/articles/${dailyPick.id}`}
-            className="group relative block overflow-hidden rounded-3xl border border-primary/15 bg-gradient-to-br from-primary/10 via-primary/[0.04] to-background p-8 transition-all hover:border-primary/30 hover:shadow-lg"
+            className="group relative block overflow-hidden rounded-3xl border border-primary/15 transition-all hover:border-primary/30 hover:shadow-lg"
           >
-            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
-              <Sparkles className="size-4" aria-hidden="true" />
-              今日推荐
-            </div>
-            <h2 className="mt-4 max-w-2xl font-reading text-3xl font-bold leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary">
-              {dailyPick.title}
-            </h2>
-            <p className="mt-3 max-w-2xl line-clamp-3 text-sm leading-6 text-muted-foreground">
-              {dailyPick.excerpt}
-            </p>
-            <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-              <Badge className={difficultyStyles[dailyPick.difficulty]}>
-                {difficultyLabels[dailyPick.difficulty]}
-              </Badge>
-              {dailyPick.source && dailyPick.source !== 'seed' && (
-                <span>{sourceLabel(dailyPick.source)}</span>
-              )}
-              <span>· {dailyPick.readTimeMinutes} 分钟</span>
-              <span className="text-primary">开始阅读 →</span>
+            <ArticleThumb
+              article={dailyPick}
+              className="h-64 w-full transition-transform duration-500 group-hover:scale-105 md:h-80"
+            />
+            <div className="relative bg-gradient-to-br from-primary/10 via-background to-background p-8">
+              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
+                <Sparkles className="size-4" aria-hidden="true" />
+                今日推荐
+              </div>
+              <h2 className="mt-4 max-w-2xl font-reading text-3xl font-bold leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary">
+                {dailyPick.title}
+              </h2>
+              <p className="mt-3 max-w-2xl line-clamp-3 text-sm leading-6 text-muted-foreground">
+                {dailyPick.excerpt}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                <Badge className={difficultyStyles[dailyPick.difficulty]}>
+                  {difficultyLabels[dailyPick.difficulty]}
+                </Badge>
+                {dailyPick.source && dailyPick.source !== 'seed' && (
+                  <span>{sourceLabel(dailyPick.source)}</span>
+                )}
+                <span>· {dailyPick.readTimeMinutes} 分钟</span>
+                <span className="text-primary">开始阅读 →</span>
+              </div>
             </div>
           </Link>
         </section>
