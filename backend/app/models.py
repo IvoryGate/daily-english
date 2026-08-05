@@ -19,3 +19,13 @@ class Article(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
     source: Mapped[str] = mapped_column(String(20), default="seed")
     source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    email: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

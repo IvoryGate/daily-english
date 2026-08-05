@@ -4,7 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import articles, crawler
+from app.api.routes import articles, auth, crawler
 from app.crawler.tasks import scheduler as crawl_scheduler
 from app.seed import seed
 
@@ -43,6 +43,7 @@ app.add_middleware(
 
 app.include_router(articles.router)
 app.include_router(crawler.router)
+app.include_router(auth.router)
 
 
 @app.get("/api/health")
