@@ -163,17 +163,19 @@ export function ArticleListPage() {
             <Shuffle className="size-4" aria-hidden="true" />
             随机一篇
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={runCrawl}
-            disabled={crawling}
-          >
-            {crawling && (
-              <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
-            )}
-            {crawling ? '抓取中…' : '同步外部文章'}
-          </Button>
+          {user?.isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={runCrawl}
+              disabled={crawling}
+            >
+              {crawling && (
+                <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+              )}
+              {crawling ? '抓取中…' : '同步外部文章'}
+            </Button>
+          )}
         </div>
       </section>
       {crawlMessage && (
@@ -221,7 +223,7 @@ export function ArticleListPage() {
 
       {/* 主内容区：左栏文章 + 右栏筛选 */}
       <div className="grid gap-8 lg:grid-cols-[1fr_240px]">
-        {/* 左栏：推荐 + 文章网格 */}
+        {/* 左栏：推荐 + 搜索 + 文章列表/骨架 */}
         <div className="min-w-0">
           {user && recommended.length > 0 && (
             <section className="mb-8">
@@ -270,14 +272,23 @@ export function ArticleListPage() {
             </select>
           </div>
 
+          {/* 加载骨架：匹配文章网格布局 */}
           {loading && (
-            <div className="grid gap-4 sm:grid-cols-2" aria-label="加载中">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-28 animate-pulse rounded-xl bg-muted"
-                />
-              ))}
+            <div aria-label="加载中" className="animate-pulse">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-44 overflow-hidden rounded-xl border border-border bg-card"
+                  >
+                    <div className="h-28 w-full bg-muted" />
+                    <div className="space-y-2 p-4">
+                      <div className="h-4 w-3/4 rounded bg-muted" />
+                      <div className="h-3 w-full rounded bg-muted" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}

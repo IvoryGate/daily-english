@@ -41,6 +41,7 @@ class UserOut(BaseModel):
     username: str
     email: EmailStr
     created_at: datetime
+    is_admin: int = 0
 
 
 class Token(BaseModel):

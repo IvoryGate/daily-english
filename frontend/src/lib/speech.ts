@@ -10,25 +10,28 @@ function loadVoices(): void {
   }
 }
 
-function pickEnglishVoice(): SpeechSynthesisVoice | undefined {
+function pickEnglishVoice(lang: 'en-US' | 'en-GB'): SpeechSynthesisVoice | undefined {
   const voices = window.speechSynthesis.getVoices()
   return (
-    voices.find((v) => /en[-_]US/i.test(v.lang) && v.localService) ??
-    voices.find((v) => /en[-_]US/i.test(v.lang)) ??
+    voices.find((v) => new RegExp(lang.replace('-', '[-_]'), 'i').test(v.lang) && v.localService) ??
+    voices.find((v) => new RegExp(lang.replace('-', '[-_]'), 'i').test(v.lang)) ??
     voices.find((v) => /^en/i.test(v.lang)) ??
     undefined
   )
 }
 
-/** 朗读一段英文（自动选英语音色）。 */
-export function speak(text: string, rate = 0.9): void {
+export type Accent = 'us' | 'uk'
+
+/** 朗读一段英文（可选美音 en-US / 英音 en-GB）。 */
+export function speak(text: string, rate = 0.9, accent: Accent = 'us'): void {
   if (!('speechSynthesis' in window)) return
   loadVoices()
   window.speechSynthesis.cancel()
+  const lang = accent === 'uk' ? 'en-GB' : 'en-US'
   const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = 'en-US'
+  utterance.lang = lang
   utterance.rate = rate
-  const voice = pickEnglishVoice()
+  const voice = pickEnglishVoice(lang)
   if (voice) utterance.voice = voice
   window.speechSynthesis.speak(utterance)
 }
@@ -69,7 +72,7 @@ export function startArticleSpeak(
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = 'en-US'
     utterance.rate = rate
-    const voice = pickEnglishVoice()
+    const voice = pickEnglishVoice('en-US')
     if (voice) utterance.voice = voice
     utterance.onend = speakNext
     utterance.onerror = () => {

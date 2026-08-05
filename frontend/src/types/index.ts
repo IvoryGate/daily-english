@@ -5,6 +5,7 @@ export interface User {
   username: string
   email: string
   createdAt: string
+  isAdmin?: boolean
 }
 
 /** 文章来源：内置语料 / 外部刊物（VOA/卫报/大西洋等）/ 本地粘贴 */

@@ -19,6 +19,7 @@ interface UserDTO {
   username: string
   email: string
   created_at: string
+  is_admin?: number
 }
 
 function toUser(dto: UserDTO): User {
@@ -27,6 +28,7 @@ function toUser(dto: UserDTO): User {
     username: dto.username,
     email: dto.email,
     createdAt: dto.created_at,
+    isAdmin: Boolean(dto.is_admin),
   }
 }
 

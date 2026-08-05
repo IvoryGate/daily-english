@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Bookmark, BookmarkCheck, ChevronLeft, ChevronRight, LoaderCircle, Volume2 } from 'lucide-react'
+import {
+  Bookmark,
+  BookmarkCheck,
+  ChevronLeft,
+  ChevronRight,
+  LoaderCircle,
+} from 'lucide-react'
 import { useUserData } from '@/context/UserDataContext'
 import { lookupWord } from '@/lib/dictionary'
-import { speak } from '@/lib/speech'
+import { SpeakButtons } from '@/components/SpeakButtons'
 import type { DictEntry } from '@/types'
 
-/** 重点词轮播卡片组：每个词一张卡（美英音标+发音+释义+收藏），左右箭头滑动。 */
+/** 重点词轮播：固定高度横向滑卡，每个词一页（美英音标+发音+释义+收藏）。 */
 export function KeywordCarousel({
   words,
   sourceTitle,
@@ -23,9 +29,9 @@ export function KeywordCarousel({
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-medium text-muted-foreground">
-          本文章重点词 · 预习卡片 {index + 1}/{words.length}
+          本文章重点词 · {index + 1}/{words.length}
         </p>
         <div className="flex items-center gap-1">
           <button
@@ -49,14 +55,15 @@ export function KeywordCarousel({
         </div>
       </div>
 
-      <div className="relative overflow-hidden">
+      {/* 固定高度容器：所有页等高，内容超出滚动 */}
+      <div className="relative h-44 overflow-hidden">
         <div
-          className="flex transition-transform duration-300 ease-out"
+          className="flex h-full transition-transform duration-300 ease-out"
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
           {words.map((word) => (
-            <div key={word} className="w-full shrink-0 px-0.5">
-              <KeywordCard word={word} sourceTitle={sourceTitle} />
+            <div key={word} className="h-full w-full shrink-0 overflow-hidden">
+              <KeywordView word={word} sourceTitle={sourceTitle} />
             </div>
           ))}
         </div>
@@ -65,7 +72,7 @@ export function KeywordCarousel({
   )
 }
 
-function KeywordCard({ word, sourceTitle }: { word: string; sourceTitle: string }) {
+function KeywordView({ word, sourceTitle }: { word: string; sourceTitle: string }) {
   const { vocabulary, addVocabulary, removeVocabulary } = useUserData()
   const [entry, setEntry] = useState<DictEntry | null>(null)
   const [loading, setLoading] = useState(true)
@@ -86,15 +93,6 @@ function KeywordCard({ word, sourceTitle }: { word: string; sourceTitle: string 
     }
   }, [word])
 
-  const handleSpeak = () => {
-    const audio = entry?.audioUs ?? entry?.audioUk
-    if (audio) {
-      new Audio(audio).play().catch(() => speak(word))
-    } else {
-      speak(word)
-    }
-  }
-
   const toggleSave = async () => {
     if (saved) {
       await removeVocabulary(word.toLowerCase())
@@ -109,26 +107,23 @@ function KeywordCard({ word, sourceTitle }: { word: string; sourceTitle: string 
   }
 
   return (
-    <div className="rounded-xl border border-primary/15 bg-background p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="font-reading text-lg font-bold">{word}</h3>
-            <button
-              type="button"
-              onClick={handleSpeak}
-              className="flex cursor-pointer items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-              aria-label={`朗读 ${word}`}
-              title="朗读发音"
-            >
-              <Volume2 className="size-4" aria-hidden="true" />
-            </button>
-          </div>
-          {(entry?.phoneticUs || entry?.phoneticUk) && (
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              <span className="mr-1.5">美 {entry?.phoneticUs}</span>
-              {entry?.phoneticUk && <span>英 {entry?.phoneticUk}</span>}
-            </p>
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <h3 className="shrink-0 font-reading text-xl font-bold">{word}</h3>
+          {!loading && (
+            <SpeakButtons
+              word={word}
+              audioUs={entry?.audioUs}
+              audioUk={entry?.audioUk}
+              size="sm"
+            />
+          )}
+          {!loading && (entry?.phoneticUs || entry?.phoneticUk) && (
+            <span className="truncate text-xs text-muted-foreground">
+              美 {entry?.phoneticUs}
+              {entry?.phoneticUk && <span className="ml-1.5">英 {entry?.phoneticUk}</span>}
+            </span>
           )}
         </div>
         <button
@@ -143,11 +138,11 @@ function KeywordCard({ word, sourceTitle }: { word: string; sourceTitle: string 
           ) : (
             <Bookmark className="size-4" aria-hidden="true" />
           )}
-          {saved ? '已收藏' : '收藏生词'}
+          {saved ? '已收藏' : '收藏'}
         </button>
       </div>
 
-      <div className="mt-3">
+      <div className="mt-3 min-h-0 flex-1 overflow-y-auto border-t border-border/60 pt-3">
         {loading && (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
@@ -159,7 +154,7 @@ function KeywordCard({ word, sourceTitle }: { word: string; sourceTitle: string 
         )}
         {!loading && entry && (
           <ul className="space-y-2">
-            {entry.meanings.slice(0, 3).map((m, i) => (
+            {entry.meanings.slice(0, 5).map((m, i) => (
               <li key={i} className="text-sm leading-6">
                 <span className="mr-1.5 italic text-muted-foreground">
                   {m.partOfSpeech}

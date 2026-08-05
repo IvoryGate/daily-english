@@ -62,3 +62,5 @@ def migrate() -> None:
             conn.execute(text("ALTER TABLE users ADD COLUMN ai_api_key VARCHAR(300)"))
         if "ai_model" not in user_columns:
             conn.execute(text("ALTER TABLE users ADD COLUMN ai_model VARCHAR(100)"))
+        if "is_admin" not in user_columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0"))

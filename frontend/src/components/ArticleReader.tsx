@@ -5,12 +5,11 @@ import {
   ChevronDown,
   Languages,
   LoaderCircle,
-  Volume2,
 } from 'lucide-react'
 import { useUserData } from '@/context/UserDataContext'
 import { lookupWord } from '@/lib/dictionary'
-import { speak } from '@/lib/speech'
 import { translateBatch } from '@/lib/translate'
+import { SpeakButtons } from '@/components/SpeakButtons'
 import type { ReadingFontSize } from '@/lib/storage'
 import type { DictEntry } from '@/types'
 
@@ -56,7 +55,9 @@ export function ArticleReader({
   const [active, setActive] = useState<ActiveWord | null>(null)
   const [translations, setTranslations] = useState<Record<number, string>>({})
   const [translating, setTranslating] = useState(false)
-  const [showAll, setShowAll] = useState(false)
+  const [expandAll, setExpandAll] = useState(false)
+  // 逐段手动收起集合（展开全文后仍可单独收起某段）
+  const [collapsedSet, setCollapsedSet] = useState<Set<number>>(new Set())
   const containerRef = useRef<HTMLDivElement>(null)
 
   const handleWordClick = useCallback(
@@ -76,11 +77,15 @@ export function ArticleReader({
 
   const paragraphs = content.split('\n\n')
 
+  // 翻译全文：翻译一次并持久保存（不因收起消失），然后全文展开
   const translateAll = async () => {
     if (translating) return
-    // 已全部翻译则切换显隐
-    if (showAll && Object.keys(translations).length === paragraphs.length) {
-      setShowAll(false)
+    // 已翻译过则只切换全文展开
+    if (Object.keys(translations).length >= paragraphs.length) {
+      setExpandAll((v) => !v)
+      if (expandAll) {
+        setCollapsedSet(new Set())
+      }
       return
     }
     setTranslating(true)
@@ -91,12 +96,25 @@ export function ArticleReader({
         if (t) map[i] = t
       })
       setTranslations(map)
-      setShowAll(true)
+      setExpandAll(true)
     } catch {
       // 失败静默
     } finally {
       setTranslating(false)
     }
+  }
+
+  // 逐段切换译文显示（不改变全文展开状态）
+  const toggleParagraph = (index: number) => {
+    setCollapsedSet((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else {
+        next.add(index)
+      }
+      return next
+    })
   }
 
   return (
@@ -114,11 +132,16 @@ export function ArticleReader({
           ) : (
             <Languages className="size-3.5" aria-hidden="true" />
           )}
-          {translating ? '翻译中…' : showAll ? '收起全文翻译' : '翻译全文'}
+          {translating
+            ? '翻译中…'
+            : expandAll
+              ? '收起全文翻译'
+              : '翻译全文'}
         </button>
-        {showAll && (
+        {Object.keys(translations).length > 0 && (
           <span className="text-xs text-muted-foreground">
-            共 {Object.keys(translations).length} 段译文，可逐段收起
+            已翻译 {Object.keys(translations).length} 段
+            {expandAll ? '（可逐段收起）' : '（可逐段展开）'}
           </span>
         )}
       </div>
@@ -132,7 +155,9 @@ export function ArticleReader({
             paragraph={paragraph}
             onWordClick={handleWordClick}
             translation={translations[index]}
-            showTranslation={showAll}
+            expandAll={expandAll}
+            collapsed={collapsedSet.has(index)}
+            onToggle={() => toggleParagraph(index)}
           />
         ))}
       </div>
@@ -162,17 +187,21 @@ interface ParagraphProps {
   paragraph: string
   onWordClick: (event: React.MouseEvent, word: string) => void
   translation?: string
-  showTranslation: boolean
+  expandAll: boolean
+  collapsed: boolean
+  onToggle: () => void
 }
 
 function Paragraph({
   paragraph,
   onWordClick,
   translation,
-  showTranslation,
+  expandAll,
+  collapsed,
+  onToggle,
 }: ParagraphProps) {
-  const [collapsed, setCollapsed] = useState(false)
-  const show = showTranslation && !!translation && !collapsed
+  // 显示译文的条件：有译文 且 展开全文时未被单独收起 / 或单独展开时
+  const show = !!translation && (expandAll ? !collapsed : collapsed)
 
   return (
     <div className="group relative">
@@ -193,22 +222,23 @@ function Paragraph({
         )}
       </p>
 
-      {/* 逐段翻译展示（含收起按钮） */}
-      {show && (
+      {/* 逐段翻译展示（可单独展开/收起，不依赖全文状态） */}
+      {translation && (
         <div className="mt-2">
           <button
             type="button"
-            onClick={() => setCollapsed((c) => !c)}
+            onClick={onToggle}
             className="flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground/70 transition-colors hover:text-primary"
-            aria-label={collapsed ? '展开本段译文' : '收起本段译文'}
+            aria-label={show ? '收起本段译文' : '展开本段译文'}
+            aria-pressed={show}
           >
             <ChevronDown
-              className={`size-3 transition-transform ${collapsed ? '-rotate-90' : ''}`}
+              className={`size-3 transition-transform ${show ? '' : '-rotate-90'}`}
               aria-hidden="true"
             />
             译文
           </button>
-          {!collapsed && (
+          {show && (
             <p className="mt-1 rounded-lg bg-muted/50 px-3 py-2 text-sm leading-6 text-muted-foreground">
               {translation}
             </p>
@@ -257,17 +287,6 @@ function WordPanel({ word, x, y, sourceTitle, onClose }: WordPanelProps) {
     }
   }
 
-  const handleSpeak = () => {
-    const audio = entry?.audioUs ?? entry?.audioUk
-    if (audio) {
-      const el = new Audio(audio)
-      el.volume = 1
-      el.play().catch(() => speak(word))
-    } else {
-      speak(word)
-    }
-  }
-
   const clampedX = Math.min(Math.max(x, 12), window.innerWidth - 320)
 
   return (
@@ -288,15 +307,14 @@ function WordPanel({ word, x, y, sourceTitle, onClose }: WordPanelProps) {
                 </p>
               )}
             </div>
-            <button
-              type="button"
-              onClick={handleSpeak}
-              className="flex cursor-pointer items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-              aria-label={`朗读 ${word}`}
-              title="朗读发音"
-            >
-              <Volume2 className="size-4" aria-hidden="true" />
-            </button>
+            {!loading && (
+              <SpeakButtons
+                word={word}
+                audioUs={entry?.audioUs}
+                audioUk={entry?.audioUk}
+                size="xs"
+              />
+            )}
           </div>
           <button
             type="button"

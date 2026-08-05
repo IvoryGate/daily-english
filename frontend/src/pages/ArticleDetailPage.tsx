@@ -23,6 +23,7 @@ import { useUserData } from '@/context/UserDataContext'
 import { useArticle } from '@/hooks/useArticle'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
 import { extractKeywords } from '@/lib/keywords'
+import { sourceLabel } from '@/lib/sourceLabels'
 import { startArticleSpeak, stopArticleSpeak } from '@/lib/speech'
 import {
   deleteLocalArticle,
@@ -153,7 +154,7 @@ export function ArticleDetailPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
       <div
-        className="fixed inset-x-0 top-14 z-30 h-0.5 bg-primary/10"
+        className="fixed inset-x-0 top-16 z-30 h-0.5"
         aria-hidden="true"
       >
         <div
@@ -268,6 +269,12 @@ export function ArticleDetailPage() {
               <Clock className="size-4" aria-hidden="true" />
               {article.readTimeMinutes} 分钟阅读
             </span>
+            {article.source && article.source !== 'seed' && (
+              <>
+                <span>·</span>
+                <span>{sourceLabel(article.source)}</span>
+              </>
+            )}
             <span>·</span>
             {article.tags.map((tag) => (
               <Badge key={tag} variant="outline">

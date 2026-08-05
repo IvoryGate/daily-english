@@ -47,6 +47,8 @@ class User(Base):
     ai_base_url: Mapped[str | None] = mapped_column(String(300), nullable=True)
     ai_api_key: Mapped[str | None] = mapped_column(String(300), nullable=True)
     ai_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # 管理员（可触发爬虫等管理操作）
+    is_admin: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class VocabularyEntry(Base):

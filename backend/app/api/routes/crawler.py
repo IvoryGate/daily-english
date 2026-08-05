@@ -1,9 +1,16 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.routes.auth import get_current_user
 from app.crawler.registry import sources
 from app.crawler.tasks import scheduler
+from app.models import User
 
 router = APIRouter(prefix="/api/crawl", tags=["crawl"])
+
+
+def _require_admin(user: User) -> None:
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="需要管理员权限")
 
 
 @router.get("/sources")
@@ -13,8 +20,12 @@ def list_sources() -> dict:
 
 
 @router.post("")
-def trigger_crawl(source: str | None = None) -> dict:
-    """异步触发一次抓取，立即返回任务 id。source 为空抓全部；逗号分隔可抓多个。"""
+def trigger_crawl(
+    source: str | None = None,
+    user: User = Depends(get_current_user),
+) -> dict:
+    """异步触发一次抓取（仅管理员）。立即返回任务 id。"""
+    _require_admin(user)
     requested = (
         [s.strip() for s in source.split(",") if s.strip()] if source else None
     )
