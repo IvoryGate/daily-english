@@ -4,6 +4,7 @@ from typing import Any
 
 import requests
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 from urllib.parse import quote
 
 router = APIRouter(prefix="/api/dict", tags=["dictionary"])
@@ -159,6 +160,57 @@ def translate(text: str) -> dict[str, str]:
 
     _TRANS_CACHE[text] = (time.time() + _TRANS_TTL, translated)
     return {"translated": translated}
+
+
+_SEP = "@@@SEP@@@"
+
+
+class BatchTranslateIn(BaseModel):
+    texts: list[str] = Field(min_length=1, max_length=30)
+
+
+@router.post("/translate-batch")
+def translate_batch(payload: BatchTranslateIn) -> dict[str, list[str]]:
+    """批量翻译：多段合并为一次请求（Google 保留分隔符），按段拆分返回。
+
+    比逐段请求快一个数量级（1 次往返 vs N 次）。
+    """
+    texts = [t.strip() for t in payload.texts]
+    texts = [t for t in texts if t]
+    if not texts:
+        raise HTTPException(status_code=422, detail="没有需要翻译的文本")
+    if sum(len(t) for t in texts) > 5000:
+        raise HTTPException(status_code=422, detail="总字数超限（5000）")
+
+    # 用分隔符拼接，一次翻译，再拆分
+    merged = _SEP.join(texts)
+    translated = None
+    try:
+        translated = _translate_via_google(merged)
+    except requests.RequestException:
+        translated = None
+    if not translated:
+        # Google 失败回退：逐段 MyMemory（慢，但保底）
+        result: list[str] = []
+        for t in texts:
+            try:
+                sub = _translate_via_mymemory(t)
+                result.append(sub or "")
+            except requests.RequestException:
+                result.append("")
+        return {"translations": result}
+
+    parts = [p.strip() for p in translated.split(_SEP)]
+    # 保证数量与输入一致（Google 偶发合并/多分）
+    if len(parts) < len(texts):
+        parts += [""] * (len(texts) - len(parts))
+    parts = parts[: len(texts)]
+
+    # 缓存各段（30 天）
+    for t, p in zip(texts, parts):
+        if p:
+            _TRANS_CACHE[t] = (time.time() + _TRANS_TTL, p)
+    return {"translations": parts}
 
 
 @router.get("/{word}")
