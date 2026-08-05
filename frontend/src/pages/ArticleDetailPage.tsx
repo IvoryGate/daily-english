@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ArrowLeft, Clock, Trash2 } from 'lucide-react'
 import { ArticleReader } from '@/components/ArticleReader'
@@ -6,12 +7,42 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useArticle } from '@/hooks/useArticle'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
-import { deleteLocalArticle } from '@/lib/storage'
+import { deleteLocalArticle, getReadingHistory, markRead, saveProgress } from '@/lib/storage'
 
 export function ArticleDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { article, loading } = useArticle(Number(id))
+
+  useEffect(() => {
+    if (loading || !article) return
+    const articleId = article.id
+    const saved = getReadingHistory()[articleId]?.progress
+    if (saved && saved > 0.01) {
+      requestAnimationFrame(() => {
+        const max =
+          document.documentElement.scrollHeight - window.innerHeight
+        window.scrollTo(0, max * saved)
+      })
+    }
+    let timer: number | undefined
+    const onScroll = () => {
+      const max =
+        document.documentElement.scrollHeight - window.innerHeight
+      const progress = max > 0 ? window.scrollY / max : 0
+      if (timer) window.clearTimeout(timer)
+      timer = window.setTimeout(
+        () => saveProgress(articleId, Math.min(1, Math.max(0, progress))),
+        400,
+      )
+    }
+    window.addEventListener('scroll', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (timer) window.clearTimeout(timer)
+      markRead(articleId)
+    }
+  }, [loading, article?.id])
 
   if (loading) {
     return (

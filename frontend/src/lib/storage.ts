@@ -5,6 +5,8 @@ const KEYS = {
   localArticles: 'de.localArticles.v1',
   vocabulary: 'de.vocabulary.v1',
   dictCache: 'de.dictCache.v1',
+  readingHistory: 'de.readingHistory.v1',
+  bookmarks: 'de.bookmarks.v1',
 } as const
 
 function read<T>(key: string, fallback: T): T {
@@ -139,6 +141,63 @@ export function removeVocabulary(word: string): void {
     KEYS.vocabulary,
     getVocabulary().filter((w) => w.word !== word),
   )
+}
+
+// ---- 阅读记录（已读标记 + 阅读进度） ----
+
+export interface ReadingRecord {
+  readAt: string
+  progress: number
+}
+
+export function getReadingHistory(): Record<number, ReadingRecord> {
+  return read<Record<number, ReadingRecord>>(KEYS.readingHistory, {})
+}
+
+export function markRead(id: number): void {
+  const history = getReadingHistory()
+  const prev = history[id]
+  history[id] = {
+    readAt: prev?.readAt ?? new Date().toISOString(),
+    progress: prev?.progress ?? 0,
+  }
+  write(KEYS.readingHistory, history)
+}
+
+export function saveProgress(id: number, progress: number): void {
+  const history = getReadingHistory()
+  const prev = history[id]
+  history[id] = {
+    readAt: prev?.readAt ?? new Date().toISOString(),
+    progress,
+  }
+  write(KEYS.readingHistory, history)
+}
+
+export function isRead(id: number): boolean {
+  return Boolean(getReadingHistory()[id])
+}
+
+// ---- 收藏 / 稍后读 ----
+
+export function getBookmarks(): number[] {
+  return read<number[]>(KEYS.bookmarks, [])
+}
+
+export function isBookmarked(id: number): boolean {
+  return getBookmarks().includes(id)
+}
+
+export function toggleBookmark(id: number): boolean {
+  const bookmarks = getBookmarks()
+  const index = bookmarks.indexOf(id)
+  if (index >= 0) {
+    bookmarks.splice(index, 1)
+  } else {
+    bookmarks.unshift(id)
+  }
+  write(KEYS.bookmarks, bookmarks)
+  return index < 0
 }
 
 // ---- 词典缓存（查过的词离线可读，减少重复请求） ----

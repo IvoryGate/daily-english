@@ -24,6 +24,9 @@ export function SiteHeader() {
           <NavLink to="/" className={navLinkClass} end>
             文章
           </NavLink>
+          <NavLink to="/dashboard" className={navLinkClass}>
+            我的学习
+          </NavLink>
           <NavLink to="/vocabulary" className={navLinkClass}>
             生词本
           </NavLink>
