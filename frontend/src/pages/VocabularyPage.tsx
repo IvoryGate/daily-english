@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { BookOpen, Download, Trash2, Upload } from 'lucide-react'
+import { BookOpen, Download, Library, Trash2, Upload, Volume2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useUserData } from '@/context/UserDataContext'
 import { isDue } from '@/lib/fsrs'
+import { speak } from '@/lib/speech'
 
 const stateLabels: Record<number, string> = {
   0: '新词',
@@ -34,6 +35,22 @@ export function VocabularyPage() {
     URL.revokeObjectURL(url)
   }
 
+  const handleExportAnki = () => {
+    // Anki 文本导入格式：每行一笔记，制表符分隔字段
+    const lines = vocabulary.map((entry) =>
+      [entry.word, entry.phonetic ?? '', entry.definition ?? ''].join('\t'),
+    )
+    const blob = new Blob([lines.join('\n')], {
+      type: 'text/tab-separated-values;charset=utf-8',
+    })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `dailyenglish-anki-${new Date().toISOString().slice(0, 10)}.tsv`
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
   const handleImportFile = async (file: File) => {
     const reader = new FileReader()
     reader.onload = async () => {
@@ -50,7 +67,9 @@ export function VocabularyPage() {
   if (vocabulary.length === 0) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <BookOpen className="mx-auto size-10 text-muted-foreground" />
+        <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <BookOpen className="size-6" aria-hidden="true" />
+        </span>
         <h1 className="mt-4 text-xl font-semibold">生词本还是空的</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           阅读文章时点击单词，点「收藏生词」就会出现在这里
@@ -80,6 +99,10 @@ export function VocabularyPage() {
           <Button size="sm" variant="outline" onClick={handleExport}>
             <Download className="size-4" aria-hidden="true" />
             导出
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleExportAnki}>
+            <Library className="size-4" aria-hidden="true" />
+            导出 Anki
           </Button>
           <Button
             size="sm"
@@ -118,6 +141,15 @@ export function VocabularyPage() {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-base font-semibold">{entry.word}</span>
+                  <button
+                    type="button"
+                    onClick={() => speak(entry.word)}
+                    className="flex cursor-pointer items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                    aria-label={`朗读 ${entry.word}`}
+                    title="朗读发音"
+                  >
+                    <Volume2 className="size-3.5" aria-hidden="true" />
+                  </button>
                   {entry.phonetic && (
                     <span className="text-xs text-muted-foreground">
                       {entry.phonetic}

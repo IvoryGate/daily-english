@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { fetchArticles } from '@/api/articles'
 import { useUserData } from '@/context/UserDataContext'
+import { isDue } from '@/lib/fsrs'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
 import { clearDictCache, getDictCache } from '@/lib/storage'
 import type { Article } from '@/types'
@@ -91,6 +92,8 @@ export function DashboardPage() {
       .slice(0, 6)
       .map((id) => ({ id, article: byId.get(id) }))
 
+    const dueCount = vocab.filter((w) => isDue(w.card)).length
+
     return {
       totalRead,
       weekRead,
@@ -98,6 +101,7 @@ export function DashboardPage() {
       vocabCount: vocab.length,
       bookmarkCount: bookmarksList.length,
       dictCacheCount: Object.keys(dictCache).length,
+      dueCount,
       recent,
     }
   }, [articles, reading, vocabulary, bookmarks])
@@ -151,7 +155,22 @@ export function DashboardPage() {
               label="生词本"
               value={`${stats.vocabCount} 词`}
             />
+            <StatCard
+              icon={<Sparkles className="size-4" aria-hidden="true" />}
+              label="待复习"
+              value={`${stats.dueCount} 词`}
+            />
           </div>
+
+          {stats.dueCount > 0 && (
+            <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
+              <Sparkles className="size-4 text-primary" aria-hidden="true" />
+              <span>有 {stats.dueCount} 个生词待复习</span>
+              <Link to="/review" className="ml-auto text-primary hover:underline">
+                去复习
+              </Link>
+            </div>
+          )}
 
           {stats.bookmarkCount > 0 && (
             <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">

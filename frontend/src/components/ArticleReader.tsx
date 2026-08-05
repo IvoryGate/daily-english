@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Bookmark, BookmarkCheck, LoaderCircle } from 'lucide-react'
+import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from 'lucide-react'
 import { useUserData } from '@/context/UserDataContext'
 import { lookupWord } from '@/lib/dictionary'
+import { speak } from '@/lib/speech'
+import type { ReadingFontSize } from '@/lib/storage'
 import type { DictEntry } from '@/types'
 
 interface Token {
@@ -28,9 +30,21 @@ interface ActiveWord {
 interface ArticleReaderProps {
   content: string
   sourceTitle: string
+  fontSize?: ReadingFontSize
 }
 
-export function ArticleReader({ content, sourceTitle }: ArticleReaderProps) {
+const FONT_SIZE_CLASS: Record<ReadingFontSize, string> = {
+  sm: 'text-[15px] leading-[1.8]',
+  md: 'text-[17px] leading-[1.9]',
+  lg: 'text-[19px] leading-[1.95]',
+  xl: 'text-[21px] leading-[2]',
+}
+
+export function ArticleReader({
+  content,
+  sourceTitle,
+  fontSize = 'md',
+}: ArticleReaderProps) {
   const [active, setActive] = useState<ActiveWord | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -53,9 +67,11 @@ export function ArticleReader({ content, sourceTitle }: ArticleReaderProps) {
 
   return (
     <div ref={containerRef}>
-      <div className="space-y-5 text-[15px] leading-7 text-foreground/90">
+      <div
+        className={`space-y-5 font-reading ${FONT_SIZE_CLASS[fontSize]} text-foreground/90`}
+      >
         {paragraphs.map((paragraph, index) => (
-          <p key={index}>
+          <p key={index} className="first-letter:mt-2">
             {tokenize(paragraph).map((token, i) =>
               token.isWord ? (
                 <button
@@ -143,11 +159,22 @@ function WordPanel({ word, x, y, sourceTitle, onClose }: WordPanelProps) {
         style={{ top: y, left: clampedX }}
       >
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <h3 className="text-base font-semibold">{word}</h3>
-            {entry?.phonetic && (
-              <p className="text-xs text-muted-foreground">{entry.phonetic}</p>
-            )}
+          <div className="flex items-center gap-1.5">
+            <div>
+              <h3 className="text-base font-semibold">{word}</h3>
+              {entry?.phonetic && (
+                <p className="text-xs text-muted-foreground">{entry.phonetic}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => speak(word)}
+              className="flex cursor-pointer items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              aria-label={`朗读 ${word}`}
+              title="朗读发音"
+            >
+              <Volume2 className="size-4" aria-hidden="true" />
+            </button>
           </div>
           <button
             type="button"

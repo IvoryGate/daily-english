@@ -36,7 +36,9 @@ export function RegisterPage() {
   return (
     <main className="mx-auto flex max-w-sm flex-col px-4 py-16">
       <div className="mb-6 text-center">
-        <BookOpen className="mx-auto size-10 text-primary" aria-hidden="true" />
+        <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <BookOpen className="size-6" aria-hidden="true" />
+        </span>
         <h1 className="mt-4 text-2xl font-bold tracking-tight">注册</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           一个账号，学习数据云端同步

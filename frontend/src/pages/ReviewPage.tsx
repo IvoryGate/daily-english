@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { BookOpen, Check, RotateCcw } from 'lucide-react'
+import { BookOpen, Check, RotateCcw, Shuffle, Volume2 } from 'lucide-react'
 import { Rating } from 'ts-fsrs'
 import { Button } from '@/components/ui/button'
 import { useUserData } from '@/context/UserDataContext'
 import { isDue, review } from '@/lib/fsrs'
+import { speak } from '@/lib/speech'
 import type { VocabEntry } from '@/types'
 
 const RATINGS = [
@@ -25,6 +26,15 @@ function stateLabel(state: number): string {
     default:
       return '复习中'
   }
+}
+
+function shuffle<T>(list: T[]): T[] {
+  const arr = [...list]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
 }
 
 export function ReviewPage() {
@@ -52,10 +62,20 @@ export function ReviewPage() {
     setIndex((i) => i + 1)
   }
 
+  const handleShuffle = () => {
+    if (index === 0) {
+      setQueue((q) => shuffle(q))
+    } else {
+      setQueue((q) => [...q.slice(0, index), ...shuffle(q.slice(index))])
+    }
+  }
+
   if (queue.length === 0) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <BookOpen className="mx-auto size-10 text-muted-foreground" />
+        <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <BookOpen className="size-6" aria-hidden="true" />
+        </span>
         <h1 className="mt-4 text-xl font-semibold">今天没有待复习的生词</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           去阅读收藏一些生词，或稍后再来
@@ -70,7 +90,9 @@ export function ReviewPage() {
   if (index >= queue.length) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <Check className="mx-auto size-10 text-emerald-600" />
+        <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
+          <Check className="size-6" aria-hidden="true" />
+        </span>
         <h1 className="mt-4 text-xl font-semibold">本轮复习完成</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           复习了 {queue.length} 个生词
@@ -88,17 +110,50 @@ export function ReviewPage() {
         <span>
           复习进度 {index + 1} / {queue.length}
         </span>
-        <span>{stateLabel(current.card.state)}</span>
+        <div className="flex items-center gap-2">
+          <span>{stateLabel(current.card.state)}</span>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={handleShuffle}
+            title="乱序复习"
+            aria-label="乱序复习"
+          >
+            <Shuffle className="size-4" aria-hidden="true" />
+          </Button>
+        </div>
       </div>
 
       <button
         type="button"
         onClick={() => setFlipped((f) => !f)}
-        className="flex min-h-56 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border bg-card p-8 text-center transition-transform hover:-translate-y-0.5"
+        className="flex min-h-56 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border bg-card p-8 text-center shadow-sm transition-transform hover:-translate-y-0.5"
       >
         {flipped ? (
           <>
-            <span className="text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-semibold">{current.word}</span>
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  speak(current.word)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation()
+                    speak(current.word)
+                  }
+                }}
+                className="cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                aria-label={`朗读 ${current.word}`}
+                title="朗读发音"
+              >
+                <Volume2 className="size-4" aria-hidden="true" />
+              </span>
+            </div>
+            <span className="mt-2 text-xs text-muted-foreground">
               {current.phonetic ?? ''}
             </span>
             <p className="mt-3 text-lg leading-7">{current.definition}</p>
@@ -107,9 +162,14 @@ export function ReviewPage() {
             </span>
           </>
         ) : (
-          <span className="text-4xl font-bold tracking-tight">
-            {current.word}
-          </span>
+          <>
+            <span className="text-4xl font-bold tracking-tight">
+              {current.word}
+            </span>
+            <span className="mt-3 text-xs text-muted-foreground">
+              点击卡片查看释义
+            </span>
+          </>
         )}
       </button>
 

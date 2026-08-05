@@ -1,10 +1,12 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
-import { LoaderCircle, Search } from 'lucide-react'
+import { Link, useNavigate } from 'react-router'
+import { LoaderCircle, Search, Sparkles, Shuffle } from 'lucide-react'
 import { ArticleCard } from '@/components/ArticleCard'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useArticles } from '@/hooks/useArticles'
-import { difficultyLabels } from '@/lib/difficulty'
+import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
 import { sourceLabel } from '@/lib/sourceLabels'
 import type { ArticleSource, Difficulty } from '@/types'
 import type { SortKey } from '@/api/articles'
@@ -18,6 +20,7 @@ const SORTS: { value: SortKey; label: string }[] = [
 ]
 
 export function ArticleListPage() {
+  const navigate = useNavigate()
   const [searchInput, setSearchInput] = useState('')
   const deferredSearch = useDeferredValue(searchInput.trim())
   const [source, setSource] = useState<ArticleSource | 'all'>('all')
@@ -62,6 +65,19 @@ export function ArticleListPage() {
     return map
   }, [articles])
 
+  // 今日推荐：按日期确定性挑选（每天固定一篇，不随机跳动）
+  const dailyPick = useMemo(() => {
+    if (filteredBySource.length === 0) return undefined
+    const dayNumber = Math.floor(Date.now() / 86400000)
+    return filteredBySource[dayNumber % filteredBySource.length]
+  }, [filteredBySource])
+
+  const goRandom = () => {
+    if (visibleArticles.length === 0) return
+    const pick = visibleArticles[Math.floor(Math.random() * visibleArticles.length)]
+    navigate(`/articles/${pick.id}`)
+  }
+
   const runCrawl = async () => {
     setCrawling(true)
     setCrawlMessage(null)
@@ -100,22 +116,66 @@ export function ArticleListPage() {
               每天一篇短文，保持英语语感
             </p>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={runCrawl}
-            disabled={crawling}
-          >
-            {crawling && (
-              <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
-            )}
-            {crawling ? '抓取中…' : '同步外部文章'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={goRandom}
+              disabled={visibleArticles.length === 0}
+            >
+              <Shuffle className="size-4" aria-hidden="true" />
+              随机一篇
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={runCrawl}
+              disabled={crawling}
+            >
+              {crawling && (
+                <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+              )}
+              {crawling ? '抓取中…' : '同步外部文章'}
+            </Button>
+          </div>
         </div>
         {crawlMessage && (
           <p className="mt-2 text-xs text-muted-foreground">{crawlMessage}</p>
         )}
       </section>
+
+      {dailyPick && (
+        <section className="mb-6">
+          <Link
+            to={`/articles/${dailyPick.id}`}
+            className="group block rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.06] via-background to-background p-5 transition-colors hover:border-primary/30"
+          >
+            <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+              <Sparkles className="size-3.5" aria-hidden="true" />
+              今日推荐
+            </div>
+            <h2 className="mt-2 font-reading text-lg font-bold leading-snug text-foreground group-hover:underline">
+              {dailyPick.title}
+            </h2>
+            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+              {dailyPick.excerpt}
+            </p>
+            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+              <Badge
+                className={
+                  difficultyStyles[dailyPick.difficulty]
+                }
+              >
+                {difficultyLabels[dailyPick.difficulty]}
+              </Badge>
+              {dailyPick.source && dailyPick.source !== 'seed' && (
+                <span>{sourceLabel(dailyPick.source)}</span>
+              )}
+              <span>· {dailyPick.readTimeMinutes} 分钟</span>
+            </div>
+          </Link>
+        </section>
+      )}
 
       <div className="mb-3 flex items-center gap-2">
         <div className="relative flex-1">

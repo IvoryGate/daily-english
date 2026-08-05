@@ -7,7 +7,24 @@ const KEYS = {
   dictCache: 'de.dictCache.v1',
   readingHistory: 'de.readingHistory.v1',
   bookmarks: 'de.bookmarks.v1',
+  readingFontSize: 'de.readingFontSize.v1',
 } as const
+
+const READING_FONT_SIZES = ['sm', 'md', 'lg', 'xl'] as const
+export type ReadingFontSize = (typeof READING_FONT_SIZES)[number]
+
+export function getReadingFontSize(): ReadingFontSize {
+  const stored = localStorage.getItem(KEYS.readingFontSize) as
+    | ReadingFontSize
+    | null
+  return stored && READING_FONT_SIZES.includes(stored) ? stored : 'md'
+}
+
+export function setReadingFontSize(size: ReadingFontSize): void {
+  localStorage.setItem(KEYS.readingFontSize, size)
+}
+
+export const readingFontSizes = READING_FONT_SIZES
 
 function read<T>(key: string, fallback: T): T {
   try {

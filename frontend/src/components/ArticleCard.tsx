@@ -33,10 +33,10 @@ export function ArticleCard({ article }: ArticleCardProps) {
     <Link to={`/articles/${article.id}`} className="relative block">
       <Card
         size="sm"
-        className="transition-colors hover:bg-muted/40"
+        className="shadow-sm transition-all hover:border-primary/30 hover:bg-muted/30 hover:shadow-md"
       >
         <CardHeader>
-          <CardTitle className="text-base font-semibold">
+          <CardTitle className="font-reading text-base font-bold leading-snug">
             {article.title}
           </CardTitle>
           <CardDescription className="line-clamp-2">
