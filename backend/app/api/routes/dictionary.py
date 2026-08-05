@@ -163,26 +163,50 @@ def translate(text: str) -> dict[str, str]:
 
 
 _SEP = "@@@SEP@@@"
+# Google 单次翻译的安全字符上限（留余量给分隔符），超了分块
+_CHUNK_LIMIT = 4000
 
 
 class BatchTranslateIn(BaseModel):
-    texts: list[str] = Field(min_length=1, max_length=30)
+    texts: list[str] = Field(min_length=1, max_length=200)
 
 
 @router.post("/translate-batch")
 def translate_batch(payload: BatchTranslateIn) -> dict[str, list[str]]:
     """批量翻译：多段合并为一次请求（Google 保留分隔符），按段拆分返回。
 
-    比逐段请求快一个数量级（1 次往返 vs N 次）。
+    段落过多/过长时自动分块（每块 ≤ CHUNK_LIMIT 字符），多块合并结果。
     """
     texts = [t.strip() for t in payload.texts]
     texts = [t for t in texts if t]
     if not texts:
         raise HTTPException(status_code=422, detail="没有需要翻译的文本")
-    if sum(len(t) for t in texts) > 5000:
-        raise HTTPException(status_code=422, detail="总字数超限（5000）")
 
-    # 用分隔符拼接，一次翻译，再拆分
+    result: list[str] = []
+    # 自动分块：贪心凑块，保证每块不超过 CHUNK_LIMIT
+    chunk: list[str] = []
+    chunk_len = 0
+    for t in texts:
+        # 单段超长：独立成块
+        if len(t) > _CHUNK_LIMIT:
+            if chunk:
+                result.extend(_translate_chunk(chunk))
+                chunk, chunk_len = [], 0
+            result.extend(_translate_chunk([t]))
+            continue
+        if chunk_len + len(t) > _CHUNK_LIMIT:
+            result.extend(_translate_chunk(chunk))
+            chunk, chunk_len = [], 0
+        chunk.append(t)
+        chunk_len += len(t)
+    if chunk:
+        result.extend(_translate_chunk(chunk))
+
+    return {"translations": result}
+
+
+def _translate_chunk(texts: list[str]) -> list[str]:
+    """翻译一批段落（≤ CHUNK_LIMIT 字符），返回与输入等长的译文列表。"""
     merged = _SEP.join(texts)
     translated = None
     try:
@@ -198,7 +222,7 @@ def translate_batch(payload: BatchTranslateIn) -> dict[str, list[str]]:
                 result.append(sub or "")
             except requests.RequestException:
                 result.append("")
-        return {"translations": result}
+        return result
 
     parts = [p.strip() for p in translated.split(_SEP)]
     # 保证数量与输入一致（Google 偶发合并/多分）
@@ -210,7 +234,7 @@ def translate_batch(payload: BatchTranslateIn) -> dict[str, list[str]]:
     for t, p in zip(texts, parts):
         if p:
             _TRANS_CACHE[t] = (time.time() + _TRANS_TTL, p)
-    return {"translations": parts}
+    return parts
 
 
 @router.get("/{word}")
