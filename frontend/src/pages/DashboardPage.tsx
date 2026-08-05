@@ -161,7 +161,7 @@ export function DashboardPage() {
   const today = stats?.today
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8">
       <header className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">
           {user ? `${user.username} 的学习` : '我的学习'}

@@ -30,20 +30,20 @@ export function ArticleCard({ article }: ArticleCardProps) {
   }
 
   return (
-    <Link to={`/articles/${article.id}`} className="relative block">
+    <Link to={`/articles/${article.id}`} className="relative block h-full">
       <Card
         size="sm"
-        className="shadow-sm transition-all hover:border-primary/30 hover:bg-muted/30 hover:shadow-md"
+        className="flex h-full flex-col shadow-sm transition-all hover:border-primary/30 hover:bg-muted/30 hover:shadow-md"
       >
         <CardHeader>
-          <CardTitle className="font-reading text-base font-bold leading-snug">
+          <CardTitle className="line-clamp-2 font-reading text-base font-bold leading-snug">
             {article.title}
           </CardTitle>
           <CardDescription className="line-clamp-2">
             {article.excerpt}
           </CardDescription>
         </CardHeader>
-        <div className="flex flex-wrap items-center gap-2 px-(--card-spacing) pt-1">
+        <div className="mt-auto flex flex-wrap items-center gap-2 px-(--card-spacing) pt-1">
           {read && (
             <Badge
               variant="outline"
@@ -53,18 +53,6 @@ export function ArticleCard({ article }: ArticleCardProps) {
               已读
             </Badge>
           )}
-          {article.source && article.source !== 'seed' && (
-            <Badge
-              variant="outline"
-              className={
-                article.source === 'local'
-                  ? 'border-primary/30 text-primary'
-                  : 'border-primary/40 text-primary'
-              }
-            >
-              {sourceLabel(article.source)}
-            </Badge>
-          )}
           <Badge className={difficultyStyles[article.difficulty]}>
             {difficultyLabels[article.difficulty]}
           </Badge>
@@ -72,11 +60,11 @@ export function ArticleCard({ article }: ArticleCardProps) {
             <Clock className="size-3.5" aria-hidden="true" />
             {article.readTimeMinutes} 分钟
           </span>
-          {article.tags.map((tag) => (
-            <Badge key={tag} variant="outline">
-              {tag}
-            </Badge>
-          ))}
+          {article.source && article.source !== 'seed' && (
+            <span className="text-xs text-muted-foreground">
+              {sourceLabel(article.source)}
+            </span>
+          )}
         </div>
         <div className="pt-2" />
       </Card>

@@ -15,7 +15,7 @@ function AccountLayout() {
   return (
     <div>
       <nav
-        className="mx-auto flex max-w-3xl flex-wrap items-center gap-1 px-4 pt-4"
+        className="mx-auto flex max-w-5xl flex-wrap items-center gap-1 px-4 pt-4"
         aria-label="个人中心导航"
       >
         {tabs.map(({ to, label, icon: Icon }) => (

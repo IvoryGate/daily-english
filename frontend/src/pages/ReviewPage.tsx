@@ -120,7 +120,7 @@ export function ReviewPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto max-w-5xl px-4 py-10">
       <div className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
         <span>
           复习进度 {index + 1} / {queue.length}

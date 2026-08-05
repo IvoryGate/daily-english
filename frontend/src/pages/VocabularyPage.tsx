@@ -84,7 +84,7 @@ export function VocabularyPage() {
   const dueCount = vocabulary.filter((e) => isDue(e.card)).length
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">生词本</h1>

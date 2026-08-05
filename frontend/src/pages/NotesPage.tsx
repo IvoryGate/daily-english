@@ -39,14 +39,14 @@ export function NotesPage() {
 
   if (notes === null) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-10 text-center text-sm text-muted-foreground">
+      <main className="mx-auto max-w-5xl px-4 py-10 text-center text-sm text-muted-foreground">
         加载中…
       </main>
     )
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8">
       <header className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">我的笔记</h1>
         <p className="mt-1 text-sm text-muted-foreground">
