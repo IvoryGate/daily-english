@@ -137,3 +137,66 @@ export async function saveReading(
 export async function clearMeData(): Promise<void> {
   await request<void>('/api/me/data', { method: 'DELETE' })
 }
+
+// ---- 学习激励（阶段 18） ----
+
+export interface HeatmapDay {
+  date: string
+  reads: number
+  reviews: number
+}
+
+export interface AchievementInfo {
+  key: string
+  name: string
+  desc: string
+  icon: string
+  unlocked: boolean
+}
+
+export interface LevelInfo {
+  level: number
+  name: string
+  hint: string
+  points: number
+  next_level_points: number | null
+}
+
+export interface TodayProgress {
+  read_count: number
+  review_count: number
+  read_goal: number
+  review_goal: number
+  checked_in: boolean
+}
+
+export interface StatsData {
+  read_count: number
+  vocab_count: number
+  review_count: number
+  bookmark_count: number
+  points: number
+  level: LevelInfo
+  streak: number
+  today: TodayProgress
+  achievements: AchievementInfo[]
+  heatmap: HeatmapDay[]
+}
+
+export async function fetchStats(): Promise<StatsData> {
+  return request<StatsData>('/api/me/stats')
+}
+
+export async function fetchGoals(): Promise<{ read_goal: number; review_goal: number }> {
+  return request<{ read_goal: number; review_goal: number }>('/api/me/goals')
+}
+
+export async function updateGoals(input: {
+  read_goal: number
+  review_goal: number
+}): Promise<{ read_goal: number; review_goal: number }> {
+  return request<{ read_goal: number; review_goal: number }>('/api/me/goals', {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+}

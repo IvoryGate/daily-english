@@ -38,7 +38,7 @@ function shuffle<T>(list: T[]): T[] {
 }
 
 export function ReviewPage() {
-  const { vocabulary, updateVocabulary, loading } = useUserData()
+  const { vocabulary, updateVocabulary, loading, online } = useUserData()
   const [queue, setQueue] = useState<VocabEntry[]>([])
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
@@ -58,6 +58,21 @@ export function ReviewPage() {
     await updateVocabulary(current.word, {
       card: review(current.card, rating),
     })
+    // 记录复习历史（驱动 streak/统计/成就）
+    if (online) {
+      try {
+        await fetch('/api/me/reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('de.authToken.v1')}`,
+          },
+          body: JSON.stringify({ word: current.word, rating }),
+        })
+      } catch {
+        // 记录失败不阻塞复习
+      }
+    }
     setFlipped(false)
     setIndex((i) => i + 1)
   }

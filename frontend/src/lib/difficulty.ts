@@ -11,3 +11,11 @@ export const difficultyLabels: Record<Difficulty, string> = {
   intermediate: '进阶',
   advanced: '挑战',
 }
+
+/** 用户等级(Lv1~5) → 建议阅读难度 */
+export function difficultyForLevel(level: number): Difficulty[] {
+  if (level <= 2) return ['beginner']
+  if (level === 3) return ['beginner', 'intermediate']
+  if (level === 4) return ['intermediate', 'advanced']
+  return ['advanced']
+}

@@ -86,6 +86,81 @@ def _parse(data: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
+_TRANS_CACHE: dict[str, tuple[float, str]] = {}
+_TRANS_TTL = 60 * 60 * 24 * 30  # 30 天
+
+_GOOGLE_GTX = "https://translate.googleapis.com/translate_a/single"
+_MYMEMORY = "https://api.mymemory.translated.net/get"
+
+
+def _translate_via_google(text: str) -> str | None:
+    resp = requests.get(
+        _GOOGLE_GTX,
+        params={
+            "client": "gtx",
+            "sl": "en",
+            "tl": "zh-CN",
+            "dt": "t",
+            "q": text,
+        },
+        headers=HEADERS,
+        timeout=8,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if isinstance(data, list) and data and isinstance(data[0], list):
+        parts = [seg[0] for seg in data[0] if isinstance(seg, list) and seg and seg[0]]
+        translated = "".join(parts).strip()
+        if translated:
+            return translated
+    return None
+
+
+def _translate_via_mymemory(text: str) -> str | None:
+    resp = requests.get(
+        _MYMEMORY,
+        params={"q": text, "langpair": "en|zh-CN"},
+        headers=HEADERS,
+        timeout=8,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    translated = data.get("responseData", {}).get("translatedText")
+    if translated:
+        return translated.strip()
+    return None
+
+
+@router.get("/translate")
+def translate(text: str) -> dict[str, str]:
+    """整句英译中。Google 优先，失败回退 MyMemory，带 30 天缓存。"""
+    text = text.strip()
+    if not text:
+        raise HTTPException(status_code=422, detail="翻译文本为空")
+    if len(text) > 500:
+        raise HTTPException(status_code=422, detail="单次翻译不超过 500 字符")
+
+    cached = _TRANS_CACHE.get(text)
+    if cached and cached[0] > time.time():
+        return {"translated": cached[1]}
+
+    translated = None
+    try:
+        translated = _translate_via_google(text)
+    except requests.RequestException:
+        translated = None
+    if not translated:
+        try:
+            translated = _translate_via_mymemory(text)
+        except requests.RequestException:
+            translated = None
+    if not translated:
+        raise HTTPException(status_code=502, detail="翻译服务暂时不可用")
+
+    _TRANS_CACHE[text] = (time.time() + _TRANS_TTL, translated)
+    return {"translated": translated}
+
+
 @router.get("/{word}")
 def lookup_word(word: str) -> dict[str, Any]:
     key = word.strip().lower()

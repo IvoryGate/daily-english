@@ -41,3 +41,16 @@ def migrate() -> None:
             )
         if "source_url" not in columns:
             conn.execute(text("ALTER TABLE articles ADD COLUMN source_url VARCHAR(500)"))
+
+    with engine.begin() as conn:
+        user_columns = {
+            row[1] for row in conn.execute(text("PRAGMA table_info(users)"))
+        }
+        if "daily_read_goal" not in user_columns:
+            conn.execute(
+                text("ALTER TABLE users ADD COLUMN daily_read_goal INTEGER DEFAULT 1")
+            )
+        if "daily_review_goal" not in user_columns:
+            conn.execute(
+                text("ALTER TABLE users ADD COLUMN daily_review_goal INTEGER DEFAULT 1")
+            )

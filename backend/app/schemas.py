@@ -109,3 +109,20 @@ class MeData(BaseModel):
     vocabulary: list[VocabOut]
     bookmarks: list[int]
     reading: list[ReadingOut]
+
+
+# ---- 游戏化（等级/成就/每日目标，18 学习体系） ----
+
+class ReviewIn(BaseModel):
+    word: str = Field(min_length=1, max_length=100)
+    rating: int = Field(ge=1, le=4)
+
+
+class DailyGoalsIn(BaseModel):
+    read_goal: int = Field(ge=1, le=50)
+    review_goal: int = Field(ge=0, le=200)
+
+
+class DailyGoalsOut(BaseModel):
+    read_goal: int
+    review_goal: int

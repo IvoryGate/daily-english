@@ -1,12 +1,15 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { LoaderCircle, Search, Sparkles, Shuffle } from 'lucide-react'
+import { LoaderCircle, Search, Sparkles, Shuffle, Wand2 } from 'lucide-react'
 import { ArticleCard } from '@/components/ArticleCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { fetchStats, type StatsData } from '@/api/me'
 import { useArticles } from '@/hooks/useArticles'
-import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
+import { useAuth } from '@/context/AuthContext'
+import { useUserData } from '@/context/UserDataContext'
+import { difficultyForLevel, difficultyLabels, difficultyStyles } from '@/lib/difficulty'
 import { sourceLabel } from '@/lib/sourceLabels'
 import type { ArticleSource, Difficulty } from '@/types'
 import type { SortKey } from '@/api/articles'
@@ -21,6 +24,8 @@ const SORTS: { value: SortKey; label: string }[] = [
 
 export function ArticleListPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const { reading } = useUserData()
   const [searchInput, setSearchInput] = useState('')
   const deferredSearch = useDeferredValue(searchInput.trim())
   const [source, setSource] = useState<ArticleSource | 'all'>('all')
@@ -29,6 +34,7 @@ export function ArticleListPage() {
   const [crawling, setCrawling] = useState(false)
   const [crawlMessage, setCrawlMessage] = useState<string | null>(null)
   const [visible, setVisible] = useState(PAGE_SIZE)
+  const [stats, setStats] = useState<StatsData | null>(null)
 
   const query = useMemo(
     () => ({ q: deferredSearch, difficulty, sort }),
@@ -39,6 +45,22 @@ export function ArticleListPage() {
   useEffect(() => {
     setVisible(PAGE_SIZE)
   }, [deferredSearch, source, difficulty, sort])
+
+  useEffect(() => {
+    if (!user) {
+      setStats(null)
+      return
+    }
+    let active = true
+    fetchStats()
+      .then((data) => {
+        if (active) setStats(data)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [user])
 
   const sources = useMemo(() => {
     const set = new Set<string>()
@@ -71,6 +93,16 @@ export function ArticleListPage() {
     const dayNumber = Math.floor(Date.now() / 86400000)
     return filteredBySource[dayNumber % filteredBySource.length]
   }, [filteredBySource])
+
+  // 为你推荐：登录后按等级推荐合适难度的未读文章
+  const recommended = useMemo(() => {
+    if (!stats || stats.level.level === 0) return []
+    const levels = difficultyForLevel(stats.level.level)
+    const pool = articles.filter((a) => levels.includes(a.difficulty))
+    const unread = pool.filter((a) => !reading[a.id])
+    // 优先未读，取前 3 篇
+    return (unread.length > 0 ? unread : pool).slice(0, 3)
+  }, [stats, articles, reading])
 
   const goRandom = () => {
     if (visibleArticles.length === 0) return
@@ -174,6 +206,23 @@ export function ArticleListPage() {
               <span>· {dailyPick.readTimeMinutes} 分钟</span>
             </div>
           </Link>
+        </section>
+      )}
+
+      {user && recommended.length > 0 && (
+        <section className="mb-6">
+          <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
+            <Wand2 className="size-4 text-primary" aria-hidden="true" />
+            为你推荐
+            <span className="text-xs font-normal text-muted-foreground">
+              （Lv{stats?.level.level} {stats?.level.name} · 适合你当前水平的文章）
+            </span>
+          </div>
+          <div className="flex flex-col gap-3">
+            {recommended.map((article) => (
+              <ArticleCard key={article.id} article={article} />
+            ))}
+          </div>
         </section>
       )}
 

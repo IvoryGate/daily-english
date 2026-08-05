@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from 'lucide-react'
+import {
+  Bookmark,
+  BookmarkCheck,
+  Languages,
+  LoaderCircle,
+  Volume2,
+} from 'lucide-react'
 import { useUserData } from '@/context/UserDataContext'
 import { lookupWord } from '@/lib/dictionary'
 import { speak } from '@/lib/speech'
@@ -71,22 +77,11 @@ export function ArticleReader({
         className={`space-y-5 font-reading ${FONT_SIZE_CLASS[fontSize]} text-foreground/90`}
       >
         {paragraphs.map((paragraph, index) => (
-          <p key={index} className="first-letter:mt-2">
-            {tokenize(paragraph).map((token, i) =>
-              token.isWord ? (
-                <button
-                  key={i}
-                  type="button"
-                  className="cursor-pointer rounded-sm px-0.5 transition-colors hover:bg-accent hover:text-accent-foreground"
-                  onClick={(event) => handleWordClick(event, token.text)}
-                >
-                  {token.text}
-                </button>
-              ) : (
-                <span key={i}>{token.text}</span>
-              ),
-            )}
-          </p>
+          <Paragraph
+            key={index}
+            paragraph={paragraph}
+            onWordClick={handleWordClick}
+          />
         ))}
       </div>
 
@@ -109,6 +104,70 @@ interface WordPanelProps {
   y: number
   sourceTitle: string
   onClose: () => void
+}
+
+interface ParagraphProps {
+  paragraph: string
+  onWordClick: (event: React.MouseEvent, word: string) => void
+}
+
+function Paragraph({ paragraph, onWordClick }: ParagraphProps) {
+  const [translation, setTranslation] = useState<string | null>(null)
+  const [translating, setTranslating] = useState(false)
+
+  const translateParagraph = async () => {
+    if (translation) return
+    setTranslating(true)
+    try {
+      const res = await fetch(
+        `/api/dict/translate?text=${encodeURIComponent(paragraph)}`,
+      )
+      if (!res.ok) throw new Error('translate failed')
+      const data = (await res.json()) as { translated: string }
+      setTranslation(data.translated)
+    } catch {
+      setTranslation('翻译失败')
+    } finally {
+      setTranslating(false)
+    }
+  }
+
+  return (
+    <p className="group relative first-letter:mt-2">
+      <button
+        type="button"
+        onClick={() => void translateParagraph()}
+        className="absolute -left-9 top-1 hidden cursor-pointer rounded-md p-1 text-muted-foreground/50 transition-colors group-hover:block hover:bg-accent hover:text-primary"
+        aria-label="翻译本段"
+        title="翻译本段"
+      >
+        {translating ? (
+          <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
+        ) : (
+          <Languages className="size-3.5" aria-hidden="true" />
+        )}
+      </button>
+      {tokenize(paragraph).map((token, i) =>
+        token.isWord ? (
+          <button
+            key={i}
+            type="button"
+            className="cursor-pointer rounded-sm px-0.5 transition-colors hover:bg-accent hover:text-accent-foreground"
+            onClick={(event) => onWordClick(event, token.text)}
+          >
+            {token.text}
+          </button>
+        ) : (
+          <span key={i}>{token.text}</span>
+        ),
+      )}
+      {translation && (
+        <span className="mt-2 block border-l-2 border-primary/30 pl-3 text-sm leading-6 text-muted-foreground">
+          {translation}
+        </span>
+      )}
+    </p>
+  )
 }
 
 function WordPanel({ word, x, y, sourceTitle, onClose }: WordPanelProps) {

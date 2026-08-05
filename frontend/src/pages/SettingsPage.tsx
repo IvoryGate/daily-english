@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react'
-import { AtSign, Database, Download, Eraser, KeyRound, UserRound } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { AtSign, BookOpen, Database, Download, Eraser, KeyRound, Target, UserRound } from 'lucide-react'
 import { changePassword, updateUsername } from '@/api/auth'
+import { fetchGoals, updateGoals } from '@/api/me'
 import { useAuth } from '@/context/AuthContext'
 import { useUserData } from '@/context/UserDataContext'
 import { Button } from '@/components/ui/button'
@@ -22,6 +23,21 @@ export function SettingsPage() {
 
   const [confirmClear, setConfirmClear] = useState(false)
   const [clearMsg, setClearMsg] = useState<string | null>(null)
+
+  const [readGoal, setReadGoal] = useState(1)
+  const [reviewGoal, setReviewGoal] = useState(1)
+  const [goalMsg, setGoalMsg] = useState<string | null>(null)
+  const [goalError, setGoalError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!user) return
+    fetchGoals()
+      .then((g) => {
+        setReadGoal(g.read_goal)
+        setReviewGoal(g.review_goal)
+      })
+      .catch(() => {})
+  }, [user])
 
   if (!user) return null
 
@@ -53,6 +69,22 @@ export function SettingsPage() {
       setPwdMsg('密码已更新')
     } catch (err) {
       setPwdError(err instanceof Error ? err.message : '修改失败')
+    }
+  }
+
+  const handleGoals = async (e: FormEvent) => {
+    e.preventDefault()
+    setGoalMsg(null)
+    setGoalError(null)
+    if (readGoal < 1 || readGoal > 50 || reviewGoal < 0 || reviewGoal > 200) {
+      setGoalError('阅读目标 1~50 篇，复习目标 0~200 词')
+      return
+    }
+    try {
+      await updateGoals({ read_goal: readGoal, review_goal: reviewGoal })
+      setGoalMsg('每日目标已保存')
+    } catch (err) {
+      setGoalError(err instanceof Error ? err.message : '保存失败')
     }
   }
 
@@ -154,6 +186,55 @@ export function SettingsPage() {
               <Button type="submit">更新密码</Button>
             </div>
           </form>
+        </section>
+
+        <section className="rounded-xl border bg-card p-5 text-card-foreground">
+          <h2 className="flex items-center gap-2 text-base font-semibold">
+            <Target className="size-4 text-muted-foreground" aria-hidden="true" />
+            每日目标
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            阅读和复习都达标才算当天打卡（决定连续打卡天数）
+          </p>
+          <form onSubmit={handleGoals} className="mt-4 flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="readGoal">
+                <span className="flex items-center gap-1">
+                  <BookOpen className="size-3.5" aria-hidden="true" />
+                  每日阅读（篇）
+                </span>
+              </Label>
+              <Input
+                id="readGoal"
+                type="number"
+                min={1}
+                max={50}
+                value={readGoal}
+                onChange={(e) => setReadGoal(Number(e.target.value))}
+                className="w-24"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="reviewGoal">
+                <span className="flex items-center gap-1">
+                  <Target className="size-3.5" aria-hidden="true" />
+                  每日复习（词）
+                </span>
+              </Label>
+              <Input
+                id="reviewGoal"
+                type="number"
+                min={0}
+                max={200}
+                value={reviewGoal}
+                onChange={(e) => setReviewGoal(Number(e.target.value))}
+                className="w-24"
+              />
+            </div>
+            <Button type="submit">保存目标</Button>
+          </form>
+          {goalMsg && <p className="mt-2 text-xs text-emerald-600">{goalMsg}</p>}
+          {goalError && <p className="mt-2 text-xs text-destructive">{goalError}</p>}
         </section>
 
         <section className="rounded-xl border bg-card p-5 text-card-foreground">

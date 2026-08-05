@@ -268,3 +268,129 @@ def clear_me_data(
     db.execute(delete(Bookmark).where(Bookmark.user_id == user.id))
     db.execute(delete(ReadingRecord).where(ReadingRecord.user_id == user.id))
     db.commit()
+
+
+# ---- 游戏化（18 学习体系） ----
+
+from app.gamification import (  # noqa: E402
+    compute_points,
+    compute_streak,
+    day_progress,
+    evaluate_achievements,
+    get_level,
+    heatmap_data,
+    local_today,
+    total_counts,
+)
+from app.models import Achievement, ReviewHistory  # noqa: E402
+from app.schemas import DailyGoalsIn, DailyGoalsOut, ReviewIn  # noqa: E402
+
+
+def _unlock_achievements(
+    db: Session, user: User, stats: dict, streak: int
+) -> list[str]:
+    """检查并解锁新达成的成就，返回本次新解锁的 key。"""
+    satisfied = evaluate_achievements(db, user, stats, streak)
+    newly = []
+    for a in satisfied:
+        if not a["unlocked"]:
+            continue
+        exists = db.scalars(
+            select(Achievement).where(
+                Achievement.user_id == user.id,
+                Achievement.key == a["key"],
+            )
+        ).first()
+        if exists is None:
+            db.add(Achievement(user_id=user.id, key=a["key"]))
+            newly.append(a["key"])
+    if newly:
+        db.commit()
+    return newly
+
+
+@router.post("/reviews", status_code=201)
+def add_review(
+    payload: ReviewIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """记录一次复习作答，并评估新成就。"""
+    db.add(
+        ReviewHistory(
+            user_id=user.id,
+            word=payload.word.strip().lower(),
+            rating=payload.rating,
+        )
+    )
+    db.commit()
+    # 复习是高频学习动作，顺带评估并解锁新成就
+    counts = total_counts(db, user)
+    streak = compute_streak(db, user)
+    newly = _unlock_achievements(db, user, counts, streak)
+    return {"ok": True, "new_achievements": newly}
+
+
+@router.get("/goals", response_model=DailyGoalsOut)
+def get_goals(user: User = Depends(get_current_user)) -> DailyGoalsOut:
+    return DailyGoalsOut(
+        read_goal=user.daily_read_goal or 1,
+        review_goal=user.daily_review_goal or 1,
+    )
+
+
+@router.put("/goals", response_model=DailyGoalsOut)
+def update_goals(
+    payload: DailyGoalsIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DailyGoalsOut:
+    user.daily_read_goal = payload.read_goal
+    user.daily_review_goal = payload.review_goal
+    db.commit()
+    return DailyGoalsOut(
+        read_goal=user.daily_read_goal,
+        review_goal=user.daily_review_goal,
+    )
+
+
+@router.get("/stats")
+def get_stats(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """学习统计聚合：等级/streak/今日进度/成就/热力图。"""
+    counts = total_counts(db, user)
+    points = compute_points(
+        counts["read_count"], counts["vocab_count"], counts["review_count"]
+    )
+    level = get_level(points)
+    streak = compute_streak(db, user)
+    today = day_progress(db, user, local_today())
+    achievements = evaluate_achievements(db, user, counts, streak)
+    # 已解锁的 key 集合
+    unlocked = set(
+        db.scalars(
+            select(Achievement.key).where(Achievement.user_id == user.id)
+        )
+    )
+    for a in achievements:
+        a["unlocked"] = a["key"] in unlocked
+    # 尝试解锁新成就（读取时不写库，避免 GET 副作用；解锁放在写操作里）
+    return {
+        **counts,
+        "points": points,
+        "level": level,
+        "streak": streak,
+        "today": today,
+        "achievements": achievements,
+        "heatmap": heatmap_data(db, user),
+    }
+
+
+@router.get("/stats/heatmap")
+def get_heatmap(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    return {"heatmap": heatmap_data(db, user)}

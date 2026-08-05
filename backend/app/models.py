@@ -38,6 +38,9 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(120), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    # 每日目标：阅读篇数 / 复习词数（读+复习双达标才打卡）
+    daily_read_goal: Mapped[int] = mapped_column(Integer, default=1)
+    daily_review_goal: Mapped[int] = mapped_column(Integer, default=1)
 
 
 class VocabularyEntry(Base):
@@ -90,3 +93,38 @@ class ReadingRecord(Base):
     )
     read_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     progress: Mapped[float] = mapped_column(Float, default=0.0)
+
+
+class ReviewHistory(Base):
+    """一次复习记录（每张 FSRS 卡每次作答一行），驱动 streak/热力图/趋势。"""
+
+    __tablename__ = "review_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    word: Mapped[str] = mapped_column(String(100), index=True)
+    # ts-fsrs Rating: 1=Again 2=Hard 3=Good 4=Easy
+    rating: Mapped[int] = mapped_column(Integer)
+    reviewed_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, index=True
+    )
+
+
+class Achievement(Base):
+    """已解锁的成就徽章，一行一个。"""
+
+    __tablename__ = "achievements"
+    __table_args__ = (
+        UniqueConstraint("user_id", "key", name="uq_achievement_user_key"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    key: Mapped[str] = mapped_column(String(50))
+    unlocked_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow
+    )

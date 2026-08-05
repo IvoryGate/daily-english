@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useMemo, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   ArrowLeft,
+  Bookmark,
+  BookmarkCheck,
   Clock,
   ExternalLink,
   Minus,
@@ -17,7 +19,8 @@ import { Separator } from '@/components/ui/separator'
 import { useUserData } from '@/context/UserDataContext'
 import { useArticle } from '@/hooks/useArticle'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
-import { startArticleSpeak, stopArticleSpeak } from '@/lib/speech'
+import { extractKeywords } from '@/lib/keywords'
+import { speak, startArticleSpeak, stopArticleSpeak } from '@/lib/speech'
 import {
   deleteLocalArticle,
   getReadingFontSize,
@@ -30,7 +33,8 @@ export function ArticleDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { article, loading } = useArticle(Number(id))
-  const { reading, markRead, saveProgress } = useUserData()
+  const { reading, markRead, saveProgress, vocabulary, addVocabulary } =
+    useUserData()
   const readingRef = useRef(reading)
   readingRef.current = reading
   const markReadRef = useRef(markRead)
@@ -43,6 +47,11 @@ export function ArticleDetailPage() {
     getReadingFontSize,
   )
   const [readingAloud, setReadingAloud] = useState(false)
+
+  const keywords = useMemo(
+    () => extractKeywords(article?.content ?? ''),
+    [article],
+  )
 
   const adjustFont = (delta: -1 | 1) => {
     const index = readingFontSizes.indexOf(fontSize)
@@ -236,6 +245,57 @@ export function ArticleDetailPage() {
             ))}
           </div>
         </header>
+
+        {keywords.length > 0 && (
+          <div className="mb-6 rounded-xl border border-primary/15 bg-primary/[0.04] p-4">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">
+              本文章重点词（读前先预习，遇到不认识的点词查）
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {keywords.map((word) => {
+                const saved = vocabulary.some(
+                  (w) => w.word === word.toLowerCase(),
+                )
+                return (
+                  <span
+                    key={word}
+                    className="group inline-flex items-center gap-1 rounded-full border bg-background py-1 pl-3 pr-1.5 text-sm"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => speak(word)}
+                      className="font-medium text-foreground transition-colors hover:text-primary"
+                      title={`朗读 ${word}`}
+                    >
+                      {word}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!saved) {
+                          void addVocabulary({
+                            word: word.toLowerCase(),
+                            sourceTitle: article.title,
+                          })
+                        }
+                      }}
+                      disabled={saved}
+                      className="flex cursor-pointer items-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-primary disabled:cursor-default disabled:opacity-60"
+                      aria-label={saved ? `已收藏 ${word}` : `收藏 ${word}`}
+                      title={saved ? '已收藏' : '收藏生词'}
+                    >
+                      {saved ? (
+                        <BookmarkCheck className="size-3.5" aria-hidden="true" />
+                      ) : (
+                        <Bookmark className="size-3.5" aria-hidden="true" />
+                      )}
+                    </button>
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         <Separator className="mb-8 bg-foreground/10" />
 
