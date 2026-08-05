@@ -10,6 +10,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { NewArticlePage } from '@/pages/NewArticlePage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { ReviewPage } from '@/pages/ReviewPage'
+import { SettingsPage } from '@/pages/SettingsPage'
 import { VocabularyPage } from '@/pages/VocabularyPage'
 
 function App() {
@@ -40,15 +41,23 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/new" element={<NewArticlePage />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                }
-              />
+            <Route path="/new" element={<NewArticlePage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
             </Routes>
           </div>
         </UserDataProvider>

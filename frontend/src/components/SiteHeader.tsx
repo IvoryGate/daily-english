@@ -53,9 +53,13 @@ export function SiteHeader() {
           </Button>
           {user ? (
             <div className="ml-1 flex items-center gap-1">
-              <span className="hidden max-w-24 truncate text-sm text-muted-foreground sm:inline">
+              <NavLink
+                to="/settings"
+                className="hidden max-w-24 truncate rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground sm:inline"
+                title="个人设置"
+              >
                 {user.username}
-              </span>
+              </NavLink>
               <Button size="sm" variant="ghost" onClick={handleLogout}>
                 退出
               </Button>

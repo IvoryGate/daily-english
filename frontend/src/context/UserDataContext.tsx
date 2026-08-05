@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext'
 import {
   addBookmark,
   addVocabulary as cloudAddVocabulary,
+  clearMeData,
   fetchMeData,
   removeBookmark,
   removeVocabulary as cloudRemoveVocabulary,
@@ -59,6 +60,7 @@ interface UserDataValue {
   markRead: (id: number) => Promise<void>
   saveProgress: (id: number, progress: number) => Promise<void>
   importVocabulary: (raw: string) => Promise<ImportResult>
+  clearAll: () => Promise<void>
 }
 
 const UserDataContext = createContext<UserDataValue | null>(null)
@@ -346,6 +348,19 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     [online, vocabulary],
   )
 
+  // ---- 清空云端数据（个人后台） ----
+
+  const clearAll = useCallback(async () => {
+    if (online) {
+      await clearMeData()
+    } else {
+      clearLocalUserData()
+    }
+    setVocabulary([])
+    setBookmarks([])
+    setReading({})
+  }, [online])
+
   return (
     <UserDataContext.Provider
       value={{
@@ -362,6 +377,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
         markRead,
         saveProgress,
         importVocabulary,
+        clearAll,
       }}
     >
       {children}

@@ -47,6 +47,15 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
+class UsernameUpdate(BaseModel):
+    username: str = Field(min_length=2, max_length=50)
+
+
+class PasswordChange(BaseModel):
+    old_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=6, max_length=128)
+
+
 # ---- 用户个人数据（15.2 数据云端化） ----
 
 class VocabCreate(BaseModel):

@@ -77,3 +77,43 @@ export async function fetchMe(): Promise<User> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return toUser((await res.json()) as UserDTO)
 }
+
+export async function updateUsername(username: string): Promise<User> {
+  const token = getToken()
+  if (!token) throw new Error('未登录')
+  const res = await fetch('/api/auth/me', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ username }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    const detail = (body as { detail?: string } | null)?.detail
+    throw new Error(detail ?? `请求失败（${res.status}）`)
+  }
+  return toUser((await res.json()) as UserDTO)
+}
+
+export async function changePassword(
+  oldPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const token = getToken()
+  if (!token) throw new Error('未登录')
+  const res = await fetch('/api/auth/change-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    const detail = (body as { detail?: string } | null)?.detail
+    throw new Error(detail ?? `请求失败（${res.status}）`)
+  }
+}

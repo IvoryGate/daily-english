@@ -1,0 +1,205 @@
+import { useState, type FormEvent } from 'react'
+import { AtSign, Database, Download, Eraser, KeyRound, UserRound } from 'lucide-react'
+import { changePassword, updateUsername } from '@/api/auth'
+import { useAuth } from '@/context/AuthContext'
+import { useUserData } from '@/context/UserDataContext'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+export function SettingsPage() {
+  const { user, refreshUser } = useAuth()
+  const { vocabulary, bookmarks, reading, online, clearAll } = useUserData()
+
+  const [username, setUsername] = useState(user?.username ?? '')
+  const [userMsg, setUserMsg] = useState<string | null>(null)
+  const [userError, setUserError] = useState<string | null>(null)
+
+  const [oldPassword, setOldPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [pwdMsg, setPwdMsg] = useState<string | null>(null)
+  const [pwdError, setPwdError] = useState<string | null>(null)
+
+  const [confirmClear, setConfirmClear] = useState(false)
+  const [clearMsg, setClearMsg] = useState<string | null>(null)
+
+  if (!user) return null
+
+  const handleUsername = async (e: FormEvent) => {
+    e.preventDefault()
+    setUserMsg(null)
+    setUserError(null)
+    try {
+      await updateUsername(username.trim())
+      await refreshUser()
+      setUserMsg('用户名已更新')
+    } catch (err) {
+      setUserError(err instanceof Error ? err.message : '更新失败')
+    }
+  }
+
+  const handlePassword = async (e: FormEvent) => {
+    e.preventDefault()
+    setPwdMsg(null)
+    setPwdError(null)
+    if (newPassword.length < 6) {
+      setPwdError('新密码至少 6 位')
+      return
+    }
+    try {
+      await changePassword(oldPassword, newPassword)
+      setOldPassword('')
+      setNewPassword('')
+      setPwdMsg('密码已更新')
+    } catch (err) {
+      setPwdError(err instanceof Error ? err.message : '修改失败')
+    }
+  }
+
+  const handleExport = () => {
+    const payload = {
+      app: 'DailyEnglish',
+      type: 'user-data-export',
+      exportedAt: new Date().toISOString(),
+      vocabulary,
+      bookmarks,
+      reading,
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `dailyenglish-data-${new Date().toISOString().slice(0, 10)}.json`
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleClear = async () => {
+    setClearMsg(null)
+    await clearAll()
+    setConfirmClear(false)
+    setClearMsg('已清空云端数据')
+  }
+
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-8">
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight">个人设置</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          账号信息与学习数据管理
+        </p>
+      </header>
+
+      <div className="flex flex-col gap-6">
+        <section className="rounded-xl border bg-card p-5 text-card-foreground">
+          <h2 className="flex items-center gap-2 text-base font-semibold">
+            <UserRound className="size-4 text-muted-foreground" aria-hidden="true" />
+            账号信息
+          </h2>
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <AtSign className="size-3.5" aria-hidden="true" />
+            {user.email}
+          </p>
+
+          <form onSubmit={handleUsername} className="mt-4 flex items-end gap-3">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="username">用户名</Label>
+              <Input
+                id="username"
+                required
+                minLength={2}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <Button type="submit">保存用户名</Button>
+          </form>
+          {userMsg && <p className="mt-2 text-xs text-emerald-600">{userMsg}</p>}
+          {userError && <p className="mt-2 text-xs text-destructive">{userError}</p>}
+        </section>
+
+        <section className="rounded-xl border bg-card p-5 text-card-foreground">
+          <h2 className="flex items-center gap-2 text-base font-semibold">
+            <KeyRound className="size-4 text-muted-foreground" aria-hidden="true" />
+            修改密码
+          </h2>
+          <form onSubmit={handlePassword} className="mt-4 flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="oldPassword">原密码</Label>
+              <Input
+                id="oldPassword"
+                type="password"
+                required
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="newPassword">新密码</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                required
+                minLength={6}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="至少 6 位"
+              />
+            </div>
+            {pwdMsg && <p className="text-xs text-emerald-600">{pwdMsg}</p>}
+            {pwdError && <p className="text-xs text-destructive">{pwdError}</p>}
+            <div>
+              <Button type="submit">更新密码</Button>
+            </div>
+          </form>
+        </section>
+
+        <section className="rounded-xl border bg-card p-5 text-card-foreground">
+          <h2 className="flex items-center gap-2 text-base font-semibold">
+            <Database className="size-4 text-muted-foreground" aria-hidden="true" />
+            数据管理
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            当前云端数据：{vocabulary.length} 个生词 · {bookmarks.length} 篇收藏 ·{' '}
+            {Object.keys(reading).length} 条阅读记录
+            {!online && '（未登录，数据保存在本机）'}
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="size-4" aria-hidden="true" />
+              导出数据
+            </Button>
+            {!confirmClear ? (
+              <Button
+                variant="outline"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setConfirmClear(true)}
+              >
+                <Eraser className="size-4" aria-hidden="true" />
+                清空数据
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-destructive">确定清空全部学习数据？</span>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => void handleClear()}
+                >
+                  确认清空
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setConfirmClear(false)}>
+                  取消
+                </Button>
+              </div>
+            )}
+          </div>
+          {clearMsg && <p className="mt-2 text-xs text-emerald-600">{clearMsg}</p>}
+        </section>
+      </div>
+    </main>
+  )
+}

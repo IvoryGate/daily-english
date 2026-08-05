@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.api.routes.auth import get_current_user
@@ -253,4 +253,18 @@ def remove_reading(
     if record is None:
         raise HTTPException(status_code=404, detail="没有该阅读记录")
     db.delete(record)
+    db.commit()
+
+
+# ---- 数据管理（15.5 个人后台） ----
+
+@router.delete("/data", status_code=204)
+def clear_me_data(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    """清空当前用户的全部个人数据（生词/收藏/阅读记录）。"""
+    db.execute(delete(VocabularyEntry).where(VocabularyEntry.user_id == user.id))
+    db.execute(delete(Bookmark).where(Bookmark.user_id == user.id))
+    db.execute(delete(ReadingRecord).where(ReadingRecord.user_id == user.id))
     db.commit()

@@ -133,3 +133,7 @@ export async function saveReading(
     body: JSON.stringify({ progress: input.progress, read_at: input.readAt }),
   })
 }
+
+export async function clearMeData(): Promise<void> {
+  await request<void>('/api/me/data', { method: 'DELETE' })
+}

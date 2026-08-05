@@ -5,7 +5,14 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
-from app.schemas import LoginRequest, Token, UserCreate, UserOut
+from app.schemas import (
+    LoginRequest,
+    PasswordChange,
+    Token,
+    UserCreate,
+    UserOut,
+    UsernameUpdate,
+)
 from app.security import (
     create_access_token,
     decode_access_token,
@@ -71,3 +78,32 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> Token:
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(get_current_user)) -> User:
     return user
+
+
+@router.patch("/me", response_model=UserOut)
+def update_me(
+    payload: UsernameUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    existing = db.scalars(
+        select(User).where(User.username == payload.username)
+    ).first()
+    if existing is not None and existing.id != user.id:
+        raise HTTPException(status_code=400, detail="用户名已被占用")
+    user.username = payload.username
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.post("/change-password", status_code=204)
+def change_password(
+    payload: PasswordChange,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    if not verify_password(payload.old_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="原密码不正确")
+    user.password_hash = hash_password(payload.new_password)
+    db.commit()
