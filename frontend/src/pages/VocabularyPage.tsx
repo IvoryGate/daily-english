@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { BookOpen, Trash2 } from 'lucide-react'
+import { BookOpen, Download, Trash2, Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { isDue } from '@/lib/fsrs'
-import { getVocabulary, removeVocabulary } from '@/lib/storage'
+import {
+  exportVocabulary,
+  getVocabulary,
+  importVocabulary,
+  removeVocabulary,
+} from '@/lib/storage'
 import type { VocabEntry } from '@/types'
 
 const stateLabels: Record<number, string> = {
@@ -16,10 +21,38 @@ const stateLabels: Record<number, string> = {
 
 export function VocabularyPage() {
   const [entries, setEntries] = useState<VocabEntry[]>(getVocabulary)
+  const [message, setMessage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleRemove = (word: string) => {
     removeVocabulary(word)
     setEntries(getVocabulary())
+  }
+
+  const handleExport = () => {
+    const blob = new Blob([exportVocabulary()], {
+      type: 'application/json;charset=utf-8',
+    })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `dailyenglish-vocabulary-${new Date().toISOString().slice(0, 10)}.json`
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportFile = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const result = importVocabulary(String(reader.result ?? ''))
+        setEntries(getVocabulary())
+        setMessage(`导入完成：新增 ${result.imported} 个，跳过 ${result.skipped} 个`)
+      } catch (err) {
+        setMessage(err instanceof Error ? err.message : '导入失败')
+      }
+    }
+    reader.readAsText(file)
   }
 
   if (entries.length === 0) {
@@ -47,12 +80,40 @@ export function VocabularyPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             共 {entries.length} 个生词
           </p>
+          {message && (
+            <p className="mt-2 text-xs text-muted-foreground">{message}</p>
+          )}
         </div>
-        {dueCount > 0 && (
-          <Button size="sm" asChild>
-            <Link to="/review">{dueCount} 个待复习</Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button size="sm" variant="outline" onClick={handleExport}>
+            <Download className="size-4" aria-hidden="true" />
+            导出
           </Button>
-        )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="size-4" aria-hidden="true" />
+            导入
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) handleImportFile(file)
+              e.target.value = ''
+            }}
+          />
+          {dueCount > 0 && (
+            <Button size="sm" asChild>
+              <Link to="/review">{dueCount} 个待复习</Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       <ul className="flex flex-col gap-2">

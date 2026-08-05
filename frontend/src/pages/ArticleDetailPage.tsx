@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, Clock, Trash2 } from 'lucide-react'
+import { ArrowLeft, Clock, ExternalLink, Trash2 } from 'lucide-react'
 import { ArticleReader } from '@/components/ArticleReader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -75,20 +75,30 @@ export function ArticleDetailPage() {
             返回列表
           </Link>
         </Button>
-        {article.source === 'local' && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => {
-              deleteLocalArticle(article.id)
-              navigate('/')
-            }}
-          >
-            <Trash2 className="size-4" aria-hidden="true" />
-            删除文章
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {article.sourceUrl && (
+            <Button variant="outline" size="sm" asChild>
+              <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="size-4" aria-hidden="true" />
+                查看原文
+              </a>
+            </Button>
+          )}
+          {article.source === 'local' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => {
+                deleteLocalArticle(article.id)
+                navigate('/')
+              }}
+            >
+              <Trash2 className="size-4" aria-hidden="true" />
+              删除文章
+            </Button>
+          )}
+        </div>
       </div>
 
       <article>

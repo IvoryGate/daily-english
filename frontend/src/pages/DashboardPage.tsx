@@ -1,10 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { Bookmark, BookOpen, CalendarDays, Library, LineChart } from 'lucide-react'
+import {
+  Bookmark,
+  BookOpen,
+  CalendarDays,
+  Eraser,
+  Library,
+  LineChart,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { fetchArticles } from '@/api/articles'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
-import { getBookmarks, getReadingHistory, getVocabulary } from '@/lib/storage'
+import {
+  clearDictCache,
+  getBookmarks,
+  getDictCache,
+  getReadingHistory,
+  getVocabulary,
+} from '@/lib/storage'
 import type { Article } from '@/types'
 
 function weekStart(): number {
@@ -58,6 +71,7 @@ export function DashboardPage() {
     const history = getReadingHistory()
     const vocab = getVocabulary()
     const bookmarks = getBookmarks()
+    const dictCache = getDictCache()
     const byId = new Map(articles.map((a) => [a.id, a]))
 
     const ids = Object.keys(history).map(Number)
@@ -80,8 +94,18 @@ export function DashboardPage() {
       .slice(0, 6)
       .map((id) => ({ id, article: byId.get(id) }))
 
-    return { totalRead, weekRead, wordsRead, vocabCount: vocab.length, bookmarkCount: bookmarks.length, recent }
+    return {
+      totalRead,
+      weekRead,
+      wordsRead,
+      vocabCount: vocab.length,
+      bookmarkCount: bookmarks.length,
+      dictCacheCount: Object.keys(dictCache).length,
+      recent,
+    }
   }, [articles])
+
+  const [dictCount, setDictCount] = useState(stats.dictCacheCount)
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
@@ -135,6 +159,23 @@ export function DashboardPage() {
               </Link>
             </div>
           )}
+
+          <div className="mt-3 flex items-center gap-2 rounded-xl border bg-card px-4 py-3 text-sm">
+            <Library className="size-4 text-muted-foreground" aria-hidden="true" />
+            <span>词典缓存 {dictCount} 条</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="ml-auto text-muted-foreground hover:text-destructive"
+              onClick={() => {
+                clearDictCache()
+                setDictCount(0)
+              }}
+            >
+              <Eraser className="size-4" aria-hidden="true" />
+              清理缓存
+            </Button>
+          </div>
 
           <section className="mt-8">
             <h2 className="mb-3 text-lg font-semibold">最近阅读</h2>

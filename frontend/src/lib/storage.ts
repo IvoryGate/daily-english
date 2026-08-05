@@ -143,6 +143,42 @@ export function removeVocabulary(word: string): void {
   )
 }
 
+export function exportVocabulary(): string {
+  return JSON.stringify(getVocabulary(), null, 2)
+}
+
+export function importVocabulary(raw: string): { imported: number; skipped: number } {
+  let data: unknown
+  try {
+    data = JSON.parse(raw)
+  } catch {
+    throw new Error('不是有效的 JSON 文件')
+  }
+  if (!Array.isArray(data)) {
+    throw new Error('生词本文件格式不对，应是一个数组')
+  }
+  const current = getVocabulary()
+  const existing = new Set(current.map((w) => w.word))
+  let imported = 0
+  let skipped = 0
+  for (const item of data as LegacyVocab[]) {
+    if (typeof item?.word !== 'string' || !item.word) {
+      skipped += 1
+      continue
+    }
+    if (existing.has(item.word)) {
+      skipped += 1
+      continue
+    }
+    const migrated = migrateEntry(item)
+    current.push(migrated)
+    existing.add(migrated.word)
+    imported += 1
+  }
+  write(KEYS.vocabulary, current)
+  return { imported, skipped }
+}
+
 // ---- 阅读记录（已读标记 + 阅读进度） ----
 
 export interface ReadingRecord {
@@ -210,4 +246,8 @@ export function setDictCache(word: string, entry: DictEntry): void {
   const cache = getDictCache()
   cache[word] = entry
   write(KEYS.dictCache, cache)
+}
+
+export function clearDictCache(): void {
+  write(KEYS.dictCache, {})
 }
