@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Bot, LoaderCircle, Search, Send, Sparkles, X } from 'lucide-react'
+import { Bot, LoaderCircle, Send, Sparkles, X } from 'lucide-react'
 import {
   streamChat,
   type AIChatEvent,
@@ -18,20 +18,12 @@ const SUGGESTIONS = [
   '总结文章并指出重点词汇',
 ]
 
-const TOOL_LABELS: Record<string, string> = {
-  web_search: '搜索',
-  get_article: '读取文章',
-  lookup_word: '查词',
-  get_learning_stats: '读取学习数据',
-  save_note: '保存笔记',
-}
-
 /** 思考中指示器：字符旋转 + 省略号增长动画 */
 function Thinking() {
   return (
     <span className="flex items-center text-muted-foreground">
       <span className="thinking-char" aria-hidden="true" />
-      <span className="text-xs">思考中</span>
+      <span className="ml-1 text-xs">思考中</span>
       <span className="thinking-dots" aria-hidden="true" />
     </span>
   )
@@ -230,23 +222,6 @@ export function AIChat() {
                       : 'bg-muted text-foreground'
                   }`}
                 >
-                  {m.toolCalls && m.toolCalls.length > 0 && (
-                    <div className="mb-1.5 flex flex-wrap gap-1">
-                      {m.toolCalls.map((t, ti) => (
-                        <span
-                          key={ti}
-                          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary"
-                        >
-                          {t.name === 'web_search' ? (
-                            <Search className="size-3" aria-hidden="true" />
-                          ) : (
-                            <Sparkles className="size-3" aria-hidden="true" />
-                          )}
-                          {TOOL_LABELS[t.name] ?? t.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                   {m.role === 'assistant' ? (
                     <div className="ai-markdown">
                       {m.content ? (

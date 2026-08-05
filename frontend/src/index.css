@@ -281,16 +281,16 @@ html[data-palette='notion'].dark {
   animation: thinking-char 0.5s steps(1) infinite;
 }
 
-/* ---- 思考中省略号增长动画（. .. ... 循环） ---- */
+/* ---- 思考中省略号增长动画（. .. ... 循环，永不为空） ---- */
 @keyframes thinking-dots {
   0% {
-    content: '';
-  }
-  30% {
     content: '.';
   }
-  60% {
+  35% {
     content: '..';
+  }
+  70% {
+    content: '...';
   }
   100% {
     content: '...';
@@ -300,7 +300,7 @@ html[data-palette='notion'].dark {
   @apply inline-block min-w-4 text-xs;
 }
 .thinking-dots::after {
-  content: '';
+  content: '.';
   animation: thinking-dots 1.2s steps(1) infinite;
 }
 
