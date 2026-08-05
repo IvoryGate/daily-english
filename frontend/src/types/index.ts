@@ -40,6 +40,12 @@ export interface VocabEntry {
   card: FSRSCardData
 }
 
+/** 单篇文章的阅读记录（已读 + 滚动进度） */
+export interface ReadingRecord {
+  readAt: string
+  progress: number
+}
+
 /** FSRS 卡片（序列化自 ts-fsrs 的 Card，date 用 ISO 字符串） */
 export interface FSRSCardData {
   due: string

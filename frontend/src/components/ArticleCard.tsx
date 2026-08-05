@@ -8,9 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { useUserData } from '@/context/UserDataContext'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
 import { sourceLabel } from '@/lib/sourceLabels'
-import { getBookmarks, getReadingHistory, toggleBookmark } from '@/lib/storage'
 import type { Article } from '@/types'
 
 interface ArticleCardProps {
@@ -18,10 +18,16 @@ interface ArticleCardProps {
 }
 
 export function ArticleCard({ article }: ArticleCardProps) {
-  const [bookmarked, setBookmarked] = useState(() =>
-    getBookmarks().includes(article.id),
+  const { bookmarks, reading, toggleBookmark } = useUserData()
+  const [bookmarked, setBookmarked] = useState(
+    () => bookmarks.includes(article.id),
   )
-  const read = Boolean(getReadingHistory()[article.id])
+  const read = Boolean(reading[article.id])
+
+  const handleToggle = async () => {
+    const added = await toggleBookmark(article.id)
+    setBookmarked(added)
+  }
 
   return (
     <Link to={`/articles/${article.id}`} className="relative block">
@@ -81,7 +87,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
         onClick={(event) => {
           event.preventDefault()
           event.stopPropagation()
-          setBookmarked(toggleBookmark(article.id))
+          void handleToggle()
         }}
         className="absolute right-3 top-3 rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-accent hover:text-primary"
       >

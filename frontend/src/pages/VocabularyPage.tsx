@@ -3,14 +3,8 @@ import { Link } from 'react-router'
 import { BookOpen, Download, Trash2, Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useUserData } from '@/context/UserDataContext'
 import { isDue } from '@/lib/fsrs'
-import {
-  exportVocabulary,
-  getVocabulary,
-  importVocabulary,
-  removeVocabulary,
-} from '@/lib/storage'
-import type { VocabEntry } from '@/types'
 
 const stateLabels: Record<number, string> = {
   0: '新词',
@@ -20,17 +14,16 @@ const stateLabels: Record<number, string> = {
 }
 
 export function VocabularyPage() {
-  const [entries, setEntries] = useState<VocabEntry[]>(getVocabulary)
+  const { vocabulary, removeVocabulary, importVocabulary } = useUserData()
   const [message, setMessage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleRemove = (word: string) => {
-    removeVocabulary(word)
-    setEntries(getVocabulary())
+  const handleRemove = async (word: string) => {
+    await removeVocabulary(word)
   }
 
   const handleExport = () => {
-    const blob = new Blob([exportVocabulary()], {
+    const blob = new Blob([JSON.stringify(vocabulary, null, 2)], {
       type: 'application/json;charset=utf-8',
     })
     const url = URL.createObjectURL(blob)
@@ -41,12 +34,11 @@ export function VocabularyPage() {
     URL.revokeObjectURL(url)
   }
 
-  const handleImportFile = (file: File) => {
+  const handleImportFile = async (file: File) => {
     const reader = new FileReader()
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
-        const result = importVocabulary(String(reader.result ?? ''))
-        setEntries(getVocabulary())
+        const result = await importVocabulary(String(reader.result ?? ''))
         setMessage(`导入完成：新增 ${result.imported} 个，跳过 ${result.skipped} 个`)
       } catch (err) {
         setMessage(err instanceof Error ? err.message : '导入失败')
@@ -55,7 +47,7 @@ export function VocabularyPage() {
     reader.readAsText(file)
   }
 
-  if (entries.length === 0) {
+  if (vocabulary.length === 0) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-20 text-center">
         <BookOpen className="mx-auto size-10 text-muted-foreground" />
@@ -70,7 +62,7 @@ export function VocabularyPage() {
     )
   }
 
-  const dueCount = entries.filter((e) => isDue(e.card)).length
+  const dueCount = vocabulary.filter((e) => isDue(e.card)).length
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
@@ -78,7 +70,7 @@ export function VocabularyPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">生词本</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            共 {entries.length} 个生词
+            共 {vocabulary.length} 个生词
           </p>
           {message && (
             <p className="mt-2 text-xs text-muted-foreground">{message}</p>
@@ -104,7 +96,7 @@ export function VocabularyPage() {
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0]
-              if (file) handleImportFile(file)
+              if (file) void handleImportFile(file)
               e.target.value = ''
             }}
           />
@@ -117,7 +109,7 @@ export function VocabularyPage() {
       </div>
 
       <ul className="flex flex-col gap-2">
-        {entries.map((entry) => (
+        {vocabulary.map((entry) => (
           <li
             key={entry.word}
             className="rounded-xl border bg-card p-4 text-card-foreground"
@@ -147,7 +139,7 @@ export function VocabularyPage() {
               </div>
               <button
                 type="button"
-                onClick={() => handleRemove(entry.word)}
+                onClick={() => void handleRemove(entry.word)}
                 className="shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                 aria-label={`删除 ${entry.word}`}
               >

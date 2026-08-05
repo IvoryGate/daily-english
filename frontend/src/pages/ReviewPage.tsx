@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { BookOpen, Check, RotateCcw } from 'lucide-react'
 import { Rating } from 'ts-fsrs'
 import { Button } from '@/components/ui/button'
+import { useUserData } from '@/context/UserDataContext'
 import { isDue, review } from '@/lib/fsrs'
-import { getVocabulary, updateVocabulary } from '@/lib/storage'
 import type { VocabEntry } from '@/types'
 
 const RATINGS = [
@@ -28,17 +28,24 @@ function stateLabel(state: number): string {
 }
 
 export function ReviewPage() {
-  const [queue] = useState<VocabEntry[]>(() =>
-    getVocabulary().filter((w) => isDue(w.card)),
-  )
+  const { vocabulary, updateVocabulary, loading } = useUserData()
+  const [queue, setQueue] = useState<VocabEntry[]>([])
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
+  const snapshotRef = useRef(false)
+
+  // 数据（云端异步加载）就绪后再取一次待复习队列快照
+  useEffect(() => {
+    if (loading || snapshotRef.current) return
+    snapshotRef.current = true
+    setQueue(vocabulary.filter((w) => isDue(w.card)))
+  }, [loading, vocabulary])
 
   const current = queue[index]
 
-  const respond = (rating: Rating) => {
+  const respond = async (rating: Rating) => {
     if (!current) return
-    updateVocabulary(current.word, {
+    await updateVocabulary(current.word, {
       card: review(current.card, rating),
     })
     setFlipped(false)
@@ -122,7 +129,7 @@ export function ReviewPage() {
                       ? 'text-emerald-700 dark:text-emerald-400'
                       : ''
                 }
-                onClick={() => respond(rating)}
+                onClick={() => void respond(rating)}
               >
                 {label}
               </Button>

@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Bookmark, BookmarkCheck, LoaderCircle } from 'lucide-react'
+import { useUserData } from '@/context/UserDataContext'
 import { lookupWord } from '@/lib/dictionary'
-import {
-  addVocabulary,
-  getVocabulary,
-  removeVocabulary,
-} from '@/lib/storage'
 import type { DictEntry } from '@/types'
 
 interface Token {
@@ -100,10 +96,11 @@ interface WordPanelProps {
 }
 
 function WordPanel({ word, x, y, sourceTitle, onClose }: WordPanelProps) {
+  const { vocabulary, addVocabulary, removeVocabulary } = useUserData()
   const [entry, setEntry] = useState<DictEntry | null>(null)
   const [loading, setLoading] = useState(true)
   const [saved, setSaved] = useState(() =>
-    getVocabulary().some((w) => w.word === word.toLowerCase()),
+    vocabulary.some((w) => w.word === word.toLowerCase()),
   )
 
   useEffect(() => {
@@ -121,12 +118,12 @@ function WordPanel({ word, x, y, sourceTitle, onClose }: WordPanelProps) {
     }
   }, [word])
 
-  const toggleSave = () => {
+  const toggleSave = async () => {
     if (saved) {
-      removeVocabulary(word.toLowerCase())
+      await removeVocabulary(word.toLowerCase())
       setSaved(false)
     } else {
-      addVocabulary({
+      await addVocabulary({
         word: word.toLowerCase(),
         phonetic: entry?.phonetic,
         definition: entry?.meanings[0]?.definition,
@@ -154,7 +151,7 @@ function WordPanel({ word, x, y, sourceTitle, onClose }: WordPanelProps) {
           </div>
           <button
             type="button"
-            onClick={toggleSave}
+            onClick={() => void toggleSave()}
             className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors hover:bg-accent"
             aria-pressed={saved}
           >

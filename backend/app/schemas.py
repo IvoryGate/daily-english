@@ -54,6 +54,7 @@ class VocabCreate(BaseModel):
     phonetic: str | None = None
     definition: str | None = None
     source_title: str = ""
+    card: dict | None = None
 
 
 class VocabUpdate(BaseModel):
@@ -83,6 +84,7 @@ class BookmarkOut(BaseModel):
 
 class ReadingIn(BaseModel):
     progress: float = Field(ge=0, le=1)
+    read_at: datetime | None = None
 
 
 class ReadingOut(BaseModel):

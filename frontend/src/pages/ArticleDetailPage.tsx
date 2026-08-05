@@ -1,23 +1,32 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ArrowLeft, Clock, ExternalLink, Trash2 } from 'lucide-react'
 import { ArticleReader } from '@/components/ArticleReader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { useUserData } from '@/context/UserDataContext'
 import { useArticle } from '@/hooks/useArticle'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
-import { deleteLocalArticle, getReadingHistory, markRead, saveProgress } from '@/lib/storage'
+import { deleteLocalArticle } from '@/lib/storage'
 
 export function ArticleDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { article, loading } = useArticle(Number(id))
+  const { reading, markRead, saveProgress } = useUserData()
+  const readingRef = useRef(reading)
+  readingRef.current = reading
+  const markReadRef = useRef(markRead)
+  markReadRef.current = markRead
+  const saveProgressRef = useRef(saveProgress)
+  saveProgressRef.current = saveProgress
+  const [restored, setRestored] = useState(false)
 
+  // 云端数据异步加载后恢复一次阅读进度（仅滚动，不挂监听）
   useEffect(() => {
-    if (loading || !article) return
-    const articleId = article.id
-    const saved = getReadingHistory()[articleId]?.progress
+    if (restored || !article) return
+    const saved = reading[article.id]?.progress
     if (saved && saved > 0.01) {
       requestAnimationFrame(() => {
         const max =
@@ -25,6 +34,12 @@ export function ArticleDetailPage() {
         window.scrollTo(0, max * saved)
       })
     }
+    setRestored(true)
+  }, [restored, article, reading])
+
+  useEffect(() => {
+    if (loading || !article) return
+    const articleId = article.id
     let timer: number | undefined
     const onScroll = () => {
       const max =
@@ -32,7 +47,11 @@ export function ArticleDetailPage() {
       const progress = max > 0 ? window.scrollY / max : 0
       if (timer) window.clearTimeout(timer)
       timer = window.setTimeout(
-        () => saveProgress(articleId, Math.min(1, Math.max(0, progress))),
+        () =>
+          void saveProgressRef.current(
+            articleId,
+            Math.min(1, Math.max(0, progress)),
+          ),
         400,
       )
     }
@@ -40,7 +59,7 @@ export function ArticleDetailPage() {
     return () => {
       window.removeEventListener('scroll', onScroll)
       if (timer) window.clearTimeout(timer)
-      markRead(articleId)
+      void markReadRef.current(articleId)
     }
   }, [loading, article?.id])
 

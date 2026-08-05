@@ -105,6 +105,7 @@ def add_vocabulary(
         phonetic=payload.phonetic,
         definition=payload.definition,
         source_title=payload.source_title,
+        card=payload.card or {},
     )
     _save(db, entry)
     return entry
@@ -231,6 +232,8 @@ def upsert_reading(
         )
     else:
         record.progress = payload.progress
+    if payload.read_at is not None:
+        record.read_at = payload.read_at
     _save(db, record)
     return record
 

@@ -7,17 +7,13 @@ import {
   Eraser,
   Library,
   LineChart,
+  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { fetchArticles } from '@/api/articles'
+import { useUserData } from '@/context/UserDataContext'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
-import {
-  clearDictCache,
-  getBookmarks,
-  getDictCache,
-  getReadingHistory,
-  getVocabulary,
-} from '@/lib/storage'
+import { clearDictCache, getDictCache } from '@/lib/storage'
 import type { Article } from '@/types'
 
 function weekStart(): number {
@@ -52,6 +48,7 @@ function StatCard({
 export function DashboardPage() {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
+  const { reading, vocabulary, bookmarks, migrated } = useUserData()
 
   useEffect(() => {
     let active = true
@@ -68,9 +65,9 @@ export function DashboardPage() {
   }, [])
 
   const stats = useMemo(() => {
-    const history = getReadingHistory()
-    const vocab = getVocabulary()
-    const bookmarks = getBookmarks()
+    const history = reading
+    const vocab = vocabulary
+    const bookmarksList = bookmarks
     const dictCache = getDictCache()
     const byId = new Map(articles.map((a) => [a.id, a]))
 
@@ -99,11 +96,11 @@ export function DashboardPage() {
       weekRead,
       wordsRead,
       vocabCount: vocab.length,
-      bookmarkCount: bookmarks.length,
+      bookmarkCount: bookmarksList.length,
       dictCacheCount: Object.keys(dictCache).length,
       recent,
     }
-  }, [articles])
+  }, [articles, reading, vocabulary, bookmarks])
 
   const [dictCount, setDictCount] = useState(stats.dictCacheCount)
 
@@ -114,6 +111,12 @@ export function DashboardPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           你的阅读足迹与学习数据
         </p>
+        {migrated && (
+          <p className="mt-3 flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
+            <Sparkles className="size-3.5" aria-hidden="true" />
+            本机旧数据已同步到云端，现在换设备也能继续学习
+          </p>
+        )}
       </header>
 
       {loading ? (
@@ -205,7 +208,7 @@ export function DashboardPage() {
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {new Date(
-                          getReadingHistory()[id].readAt,
+                          reading[id].readAt,
                         ).toLocaleString('zh-CN', {
                           month: 'short',
                           day: 'numeric',

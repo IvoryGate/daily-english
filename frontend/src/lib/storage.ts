@@ -1,4 +1,4 @@
-import type { Article, DictEntry, VocabEntry } from '@/types'
+import type { Article, DictEntry, ReadingRecord, VocabEntry } from '@/types'
 import { newCard } from '@/lib/fsrs'
 
 const KEYS = {
@@ -181,11 +181,6 @@ export function importVocabulary(raw: string): { imported: number; skipped: numb
 
 // ---- 阅读记录（已读标记 + 阅读进度） ----
 
-export interface ReadingRecord {
-  readAt: string
-  progress: number
-}
-
 export function getReadingHistory(): Record<number, ReadingRecord> {
   return read<Record<number, ReadingRecord>>(KEYS.readingHistory, {})
 }
@@ -212,6 +207,13 @@ export function saveProgress(id: number, progress: number): void {
 
 export function isRead(id: number): boolean {
   return Boolean(getReadingHistory()[id])
+}
+
+/** 迁移到云端后清掉本地个人数据（生词/收藏/阅读记录）。词典缓存与本地文章保留。 */
+export function clearLocalUserData(): void {
+  localStorage.removeItem(KEYS.vocabulary)
+  localStorage.removeItem(KEYS.bookmarks)
+  localStorage.removeItem(KEYS.readingHistory)
 }
 
 // ---- 收藏 / 稍后读 ----
