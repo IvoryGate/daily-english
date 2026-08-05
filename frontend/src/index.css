@@ -273,12 +273,35 @@ html[data-palette='notion'].dark {
     content: '/';
   }
 }
-.thinking-char::before {
-  content: '|';
-  animation: thinking-char 0.8s steps(1) infinite;
-}
 .thinking-char {
   @apply font-mono text-sm;
+}
+.thinking-char::before {
+  content: '-';
+  animation: thinking-char 0.5s steps(1) infinite;
+}
+
+/* ---- 思考中省略号增长动画（. .. ... 循环） ---- */
+@keyframes thinking-dots {
+  0% {
+    content: '';
+  }
+  30% {
+    content: '.';
+  }
+  60% {
+    content: '..';
+  }
+  100% {
+    content: '...';
+  }
+}
+.thinking-dots {
+  @apply inline-block min-w-4 text-xs;
+}
+.thinking-dots::after {
+  content: '';
+  animation: thinking-dots 1.2s steps(1) infinite;
 }
 
 /* ---- AI 助手：Markdown 表格 + 横向滚动 ---- */

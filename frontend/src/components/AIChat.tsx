@@ -26,14 +26,13 @@ const TOOL_LABELS: Record<string, string> = {
   save_note: '保存笔记',
 }
 
-/** 思考中指示器：字符旋转加载（-\|/） */
+/** 思考中指示器：字符旋转 + 省略号增长动画 */
 function Thinking() {
   return (
-    <span className="inline-flex items-center gap-2 text-muted-foreground">
-      <span className="thinking-char" aria-hidden="true">
-        |
-      </span>
-      <span className="text-xs">思考中…</span>
+    <span className="flex items-center text-muted-foreground">
+      <span className="thinking-char" aria-hidden="true" />
+      <span className="text-xs">思考中</span>
+      <span className="thinking-dots" aria-hidden="true" />
     </span>
   )
 }
