@@ -1,5 +1,6 @@
-import { Link, NavLink } from 'react-router'
+import { Link, NavLink, useNavigate } from 'react-router'
 import { BookOpen } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -10,6 +11,14 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   }`
 
 export function SiteHeader() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
+
   return (
     <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
@@ -24,18 +33,38 @@ export function SiteHeader() {
           <NavLink to="/" className={navLinkClass} end>
             文章
           </NavLink>
-          <NavLink to="/dashboard" className={navLinkClass}>
-            我的学习
-          </NavLink>
-          <NavLink to="/vocabulary" className={navLinkClass}>
-            生词本
-          </NavLink>
-          <NavLink to="/review" className={navLinkClass}>
-            复习
-          </NavLink>
+          {user && (
+            <NavLink to="/dashboard" className={navLinkClass}>
+              我的学习
+            </NavLink>
+          )}
+          {user && (
+            <NavLink to="/vocabulary" className={navLinkClass}>
+              生词本
+            </NavLink>
+          )}
+          {user && (
+            <NavLink to="/review" className={navLinkClass}>
+              复习
+            </NavLink>
+          )}
           <Button size="sm" className="ml-1" asChild>
             <Link to="/new">添加文章</Link>
           </Button>
+          {user ? (
+            <div className="ml-1 flex items-center gap-1">
+              <span className="hidden max-w-24 truncate text-sm text-muted-foreground sm:inline">
+                {user.username}
+              </span>
+              <Button size="sm" variant="ghost" onClick={handleLogout}>
+                退出
+              </Button>
+            </div>
+          ) : (
+            <Button size="sm" variant="outline" className="ml-1" asChild>
+              <Link to="/login">登录</Link>
+            </Button>
+          )}
         </nav>
       </div>
     </header>

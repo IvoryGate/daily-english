@@ -1,26 +1,55 @@
 import { BrowserRouter, Route, Routes } from 'react-router'
+import { AuthProvider } from '@/context/AuthContext'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { SiteHeader } from '@/components/SiteHeader'
 import { ArticleDetailPage } from '@/pages/ArticleDetailPage'
 import { ArticleListPage } from '@/pages/ArticleListPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { LoginPage } from '@/pages/LoginPage'
 import { NewArticlePage } from '@/pages/NewArticlePage'
+import { RegisterPage } from '@/pages/RegisterPage'
 import { ReviewPage } from '@/pages/ReviewPage'
 import { VocabularyPage } from '@/pages/VocabularyPage'
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-background">
-        <SiteHeader />
-        <Routes>
-          <Route path="/" element={<ArticleListPage />} />
-          <Route path="/articles/:id" element={<ArticleDetailPage />} />
-          <Route path="/vocabulary" element={<VocabularyPage />} />
-          <Route path="/review" element={<ReviewPage />} />
-          <Route path="/new" element={<NewArticlePage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-        </Routes>
-      </div>
+      <AuthProvider>
+        <div className="min-h-screen bg-background">
+          <SiteHeader />
+          <Routes>
+            <Route path="/" element={<ArticleListPage />} />
+            <Route path="/articles/:id" element={<ArticleDetailPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route
+              path="/vocabulary"
+              element={
+                <ProtectedRoute>
+                  <VocabularyPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/review"
+              element={
+                <ProtectedRoute>
+                  <ReviewPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/new" element={<NewArticlePage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </div>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

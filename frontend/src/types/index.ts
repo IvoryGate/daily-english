@@ -1,5 +1,12 @@
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced'
 
+export interface User {
+  id: number
+  username: string
+  email: string
+  createdAt: string
+}
+
 /** 文章来源：内置语料 / 外部刊物（VOA/卫报/大西洋等）/ 本地粘贴 */
 export type ArticleSource =
   | 'seed'
