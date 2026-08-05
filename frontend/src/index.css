@@ -139,6 +139,61 @@
   }
 }
 
+/* AI 助手 Markdown 排版 */
+.ai-markdown {
+  @apply text-sm leading-6;
+}
+.ai-markdown > :first-child {
+  margin-top: 0;
+}
+.ai-markdown > :last-child {
+  margin-bottom: 0;
+}
+.ai-markdown p {
+  margin: 0.5em 0;
+}
+.ai-markdown ul,
+.ai-markdown ol {
+  margin: 0.5em 0;
+  padding-left: 1.25em;
+}
+.ai-markdown ul {
+  list-style: disc;
+}
+.ai-markdown ol {
+  list-style: decimal;
+}
+.ai-markdown li {
+  margin: 0.25em 0;
+}
+.ai-markdown h1,
+.ai-markdown h2,
+.ai-markdown h3 {
+  margin: 0.75em 0 0.4em;
+  font-weight: 600;
+}
+.ai-markdown h3 {
+  font-size: 1rem;
+}
+.ai-markdown strong {
+  font-weight: 600;
+}
+.ai-markdown code {
+  @apply rounded bg-muted px-1 py-0.5 font-mono text-[0.85em];
+}
+.ai-markdown pre {
+  @apply my-2 overflow-x-auto rounded-lg bg-muted p-3;
+}
+.ai-markdown pre code {
+  @apply bg-transparent p-0;
+}
+.ai-markdown blockquote {
+  @apply my-2 border-l-2 border-primary/30 pl-3 text-muted-foreground;
+}
+.ai-markdown a {
+  @apply text-primary underline underline-offset-2;
+}
+
 /* ---- Notion 主题（通过 [data-palette="notion"] 覆盖默认 claude 变量） ---- */
 /* 权重用 html[data-palette] 确保覆盖 :root 默认值 */
 html[data-palette='notion'] {

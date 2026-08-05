@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
+import ReactMarkdown from 'react-markdown'
 import { Bot, LoaderCircle, Search, Send, Sparkles, X } from 'lucide-react'
 import {
   streamChat,
@@ -151,59 +152,67 @@ export function AIChat() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-40 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105"
+          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full border border-border bg-card py-2 pl-3 pr-4 text-sm font-medium text-foreground shadow-lg transition-all hover:border-primary/40 hover:shadow-xl"
           aria-label="打开 AI 学习助手"
           title="AI 学习助手"
         >
-          <Bot className="size-6" aria-hidden="true" />
+          <span className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Sparkles className="size-3.5" aria-hidden="true" />
+          </span>
+          AI 助手
         </button>
       )}
 
-      {/* 聊天面板 */}
+      {/* 侧边抽屉 */}
       {open && (
-        <div className="fixed bottom-5 right-5 z-50 flex h-[540px] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl">
-          <div className="flex items-center justify-between border-b bg-primary/5 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Sparkles className="size-4" aria-hidden="true" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold">AI 学习助手</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {articleId ? '已关联当前文章' : '可查词/搜索/记笔记'}
-                </p>
-              </div>
-            </div>
-            <Button size="icon-sm" variant="ghost" onClick={() => setOpen(false)} aria-label="关闭">
-              <X className="size-4" aria-hidden="true" />
-            </Button>
-          </div>
-
-          <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
-            {messages.length === 0 && (
-              <div className="py-8 text-center">
-                <Bot className="mx-auto size-8 text-muted-foreground/50" aria-hidden="true" />
-                <p className="mt-3 text-sm text-muted-foreground">
-                  问我任何关于英语学习的问题
-                </p>
-                <div className="mt-4 flex flex-col gap-2">
-                  {SUGGESTIONS.map((s) => (
-                    <Button
-                      key={s}
-                      size="sm"
-                      variant="outline"
-                      onClick={() => void send(s)}
-                    >
-                      {s}
-                    </Button>
-                  ))}
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-background/40 backdrop-blur-[2px]"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute right-0 top-0 flex h-full w-[400px] max-w-[calc(100vw-1rem)] flex-col border-l bg-card shadow-2xl">
+            <div className="flex items-center justify-between border-b px-4 py-3">
+              <div className="flex items-center gap-2">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Sparkles className="size-4" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold">AI 学习助手</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {articleId ? '已关联当前文章' : '可查词/搜索/记笔记'}
+                  </p>
                 </div>
               </div>
-            )}
+              <Button size="icon-sm" variant="ghost" onClick={() => setOpen(false)} aria-label="关闭">
+                <X className="size-4" aria-hidden="true" />
+              </Button>
+            </div>
+
+            <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+              {messages.length === 0 && (
+                <div className="py-8 text-center">
+                  <Bot className="mx-auto size-8 text-muted-foreground/50" aria-hidden="true" />
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    问我任何关于英语学习的问题
+                  </p>
+                  <div className="mt-4 flex flex-col gap-2">
+                    {SUGGESTIONS.map((s) => (
+                      <Button
+                        key={s}
+                        size="sm"
+                        variant="outline"
+                        onClick={() => void send(s)}
+                      >
+                        {s}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${
+                  className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                     m.role === 'user'
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-foreground'
@@ -226,7 +235,13 @@ export function AIChat() {
                       ))}
                     </div>
                   )}
-                  {m.content || (busy && i === messages.length - 1 ? '…' : '')}
+                  {m.role === 'assistant' ? (
+                    <div className="ai-markdown">
+                      <ReactMarkdown>{m.content || (busy && i === messages.length - 1 ? '…' : '')}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <span className="whitespace-pre-wrap">{m.content}</span>
+                  )}
                 </div>
               </div>
             ))}
@@ -257,6 +272,7 @@ export function AIChat() {
                 </Button>
               )}
             </form>
+          </div>
           </div>
         </div>
       )}

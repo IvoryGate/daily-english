@@ -55,33 +55,6 @@ def _candidate_sources(source: ModelSource) -> list[ModelSource]:
     return sources
 
 
-def _stream_one_round(
-    source: ModelSource,
-    messages: list[dict[str, Any]],
-    tools: list[dict[str, Any]],
-) -> tuple[list[str], list[dict[str, Any]], dict[str, Any] | None]:
-    """用指定源执行一轮流式，返回 (内容片段, tool_calls, 限流错误)。"""
-    collected: list[str] = []
-    tool_calls: list[dict[str, Any]] = []
-    for delta in stream_chat_completion(
-        base_url=source.base_url,
-        api_key=source.api_key or "",
-        model=source.model,
-        messages=messages,
-        tools=tools,
-    ):
-        if _is_rate_limited(delta):
-            return [], [], delta
-        if "error" in delta:
-            return collected, tool_calls, delta
-        content = delta.get("content")
-        if content:
-            collected.append(content)
-        for tc in delta.get("tool_calls") or []:
-            _merge_tool_call(tool_calls, tc)
-    return collected, tool_calls, None
-
-
 def _nonstream_one_round(
     source: ModelSource,
     messages: list[dict[str, Any]],
@@ -105,6 +78,94 @@ def _nonstream_one_round(
     return msg.get("content") or "", msg.get("tool_calls") or [], None
 
 
+def _stream_forward(
+    source: ModelSource,
+    messages: list[dict[str, Any]],
+    db: Session,
+    user: User | None,
+    tools: list[dict[str, Any]],
+):
+    """流式转发：边读边 yield，第一个 token 立即推送。
+
+    yield:
+      {"type": "content", "text": ...}   文本增量（实时）
+      {"type": "tool", "name", "args", "result"}  工具执行结果
+      {"type": "retry", "message"}  Zen 限流切备用
+      {"type": "error", "message"}  错误
+      {"type": "done"}  结束
+    """
+    collected: list[str] = []
+    tool_calls: list[dict[str, Any]] = []
+    candidates = _candidate_sources(source)
+
+    for cand in candidates:
+        # 用非流式代理的 stream 逐块，这里重新实现：边读边透传
+        from app.ai.client import stream_chat_completion as sc
+
+        err = None
+        for delta in sc(
+            base_url=cand.base_url,
+            api_key=cand.api_key or "",
+            model=cand.model,
+            messages=messages,
+            tools=tools,
+        ):
+            if _is_rate_limited(delta):
+                err = delta
+                break
+            if "error" in delta:
+                yield {"type": "error", "message": delta["error"]}
+                return
+            content = delta.get("content")
+            if content:
+                collected.append(content)
+                # 实时推送：第一个字立刻到前端
+                yield {"type": "content", "text": content}
+            for tc in delta.get("tool_calls") or []:
+                _merge_tool_call(tool_calls, tc)
+
+        if err is not None and cand.provider_id == "zen-free":
+            yield {"type": "retry", "message": f"免费模型「{cand.model}」繁忙，尝试备用…"}
+            continue
+        if err is not None:
+            yield {"type": "error", "message": err.get("error", "模型请求失败")}
+            return
+        break
+    else:
+        yield {
+            "type": "error",
+            "message": "免费模型暂时繁忙，请稍后再试，或在「设置 → AI 模型」中配置自己的 API Key。",
+        }
+        return
+
+    # 追加 assistant 消息（含累积的 tool_calls）
+    if collected:
+        messages.append({"role": "assistant", "content": "".join(collected)})
+    if tool_calls:
+        messages.append(
+            {
+                "role": "assistant",
+                "content": messages[-1]["content"] if messages[-1]["role"] == "assistant" else "",
+                "tool_calls": tool_calls,
+            }
+        )
+        for tc in tool_calls:
+            name = tc["function"]["name"]
+            try:
+                args = json.loads(tc["function"]["arguments"] or "{}")
+            except ValueError:
+                args = {}
+            from app.ai.tools import execute_tool as exec_tool
+
+            result = exec_tool(name, args, db, user)
+            yield {"type": "tool", "name": name, "args": args, "result": result}
+            messages.append(
+                {"role": "tool", "tool_call_id": tc["id"], "content": result}
+            )
+        return  # 有工具调用，需要下一轮（外层循环处理）
+    yield {"type": "done"}
+
+
 def run_chat(
     messages: list[dict[str, Any]],
     db: Session,
@@ -113,43 +174,37 @@ def run_chat(
     stream: bool = True,
 ) -> Iterator[dict[str, Any]]:
     """执行一轮或多轮对话，产出事件：
-    - {"type": "tool", "name": ..., "args": ..., "result": ...}  工具调用
-    - {"type": "content", "text": ...}                            文本增量
-    - {"type": "done"}                                            结束
-    - {"type": "error", "message": ...}                           错误（含限流提示）
-    - {"type": "retry", "message": ...}                           Zen 限流自动切换
+    - {"type": "tool", "name", "args", "result"}  工具调用
+    - {"type": "content", "text": ...}            文本增量（流式实时）
+    - {"type": "done"}                            结束
+    - {"type": "error", "message": ...}           错误
+    - {"type": "retry", "message": ...}           Zen 限流自动切换
     """
     if source is None:
         source = resolve_model_source(user)
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + messages
     tools = tool_definitions()
-    candidates = _candidate_sources(source)
 
     for _ in range(MAX_TOOL_ROUNDS):
-        # 对每个候选源尝试当前轮
-        for cand in candidates:
-            if stream:
-                collected, tool_calls, err = _stream_one_round(cand, messages, tools)
-            else:
-                content_str, tool_calls, err = _nonstream_one_round(cand, messages, tools)
-                collected = [content_str] if content_str else []
-
+        if stream:
+            # 流式：实时转发内容，工具调用时返回需要下一轮
+            had_tool = False
+            for event in _stream_forward(source, messages, db, user, tools):
+                if event.get("type") == "tool":
+                    had_tool = True
+                yield event
+            if not had_tool:
+                return
+            continue  # 有工具调用，下一轮继续
+        else:
+            content_str, tool_calls, err = _nonstream_one_round(source, messages, tools)
             if err is not None:
-                if _is_rate_limited(err) and cand.provider_id == "zen-free":
-                    # Zen 免费限流：提示并尝试下一个源
-                    yield {"type": "retry", "message": f"免费模型「{cand.model}」繁忙，尝试备用…"}
-                    continue
                 yield {"type": "error", "message": err.get("error", "模型请求失败")}
                 return
-
-            # 成功：输出内容
-            if collected:
-                text = "".join(collected)
-                if stream:
-                    yield {"type": "content", "text": text}
-                messages.append({"role": "assistant", "content": text})
-
+            if content_str:
+                yield {"type": "content", "text": content_str}
+                messages.append({"role": "assistant", "content": content_str})
             if tool_calls:
                 messages.append(
                     {
@@ -169,15 +224,8 @@ def run_chat(
                     messages.append(
                         {"role": "tool", "tool_call_id": tc["id"], "content": result}
                     )
-                break  # 工具调用需要下一轮，跳出候选循环进入下一轮
+                continue
             yield {"type": "done"}
-            return
-        else:
-            # 所有候选源都限流了
-            yield {
-                "type": "error",
-                "message": "免费模型暂时繁忙，请稍后再试，或在「设置 → AI 模型」中配置自己的 API Key。",
-            }
             return
 
     yield {"type": "error", "message": "工具调用次数过多，已停止"}

@@ -13,13 +13,14 @@ from app.models import User
 
 # Zen 免费模型（公开匿名，安装即可用）
 ZEN_BASE_URL = "https://opencode.ai/zen/v1"
-# 免费模型池：默认第一个，限流时依次尝试后续
+# 免费模型池：默认第一个，限流时依次尝试后续。
+# 实测首 token 延迟（越低越好）：mimo(3.5s) < nemotron(5.5s) < north(5.8s) < deepseek(7.6s) < ling(8.2s)
 ZEN_FREE_MODELS = [
-    "deepseek-v4-flash-free",
     "mimo-v2.5-free",
-    "ling-3.0-flash-free",
+    "deepseek-v4-flash-free",
     "nemotron-3-ultra-free",
     "north-mini-code-free",
+    "ling-3.0-flash-free",
     "laguna-s-2.1-free",
     "longcat-2.0-free",
 ]
