@@ -126,3 +126,43 @@ class DailyGoalsIn(BaseModel):
 class DailyGoalsOut(BaseModel):
     read_goal: int
     review_goal: int
+
+
+# ---- AI 助手（20 深度集成） ----
+
+class AIConfigIn(BaseModel):
+    base_url: str = Field(default="https://api.openai.com/v1", max_length=300)
+    api_key: str = Field(default="", max_length=300)
+    model: str = Field(default="gpt-4o-mini", max_length=100)
+
+
+class AIConfigOut(BaseModel):
+    provider: str
+    base_url: str | None
+    model: str | None
+    # api_key 不回传明文，仅标记是否已配置
+    has_api_key: bool
+
+
+class ChatMessageIn(BaseModel):
+    role: str = Field(pattern="^(user|assistant)$")
+    content: str = Field(max_length=8000)
+
+
+class ChatIn(BaseModel):
+    messages: list[ChatMessageIn] = Field(min_length=1, max_length=20)
+    article_id: int | None = None
+
+
+class NoteIn(BaseModel):
+    content: str = Field(min_length=1, max_length=5000)
+    article_id: int | None = None
+
+
+class NoteOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    article_id: int | None
+    content: str
+    created_at: datetime

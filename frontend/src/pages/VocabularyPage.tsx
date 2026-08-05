@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { BookOpen, Download, Library, Trash2, Upload, Volume2 } from 'lucide-react'
+import { BookOpen, Download, Library, Sparkles, Trash2, Upload, Volume2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useUserData } from '@/context/UserDataContext'
@@ -155,6 +155,21 @@ export function VocabularyPage() {
                       {entry.phonetic}
                     </span>
                   )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.dispatchEvent(
+                        new CustomEvent('de:ai-ask', {
+                          detail: `请详细讲解生词 "${entry.word}"：词性、含义、常见搭配、2-3 个例句，并说明记忆方法。`,
+                        }),
+                      )
+                    }
+                    className="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
+                    title="AI 讲解这个生词"
+                  >
+                    <Sparkles className="size-3.5" aria-hidden="true" />
+                    AI 讲解
+                  </button>
                   <Badge variant="outline">
                     {stateLabels[entry.card.state] ?? '复习中'}
                   </Badge>

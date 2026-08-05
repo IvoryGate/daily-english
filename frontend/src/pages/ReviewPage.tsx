@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { BookOpen, Check, RotateCcw, Shuffle, Volume2 } from 'lucide-react'
+import { BookOpen, Check, RotateCcw, Shuffle, Sparkles, Volume2 } from 'lucide-react'
 import { Rating } from 'ts-fsrs'
 import { Button } from '@/components/ui/button'
 import { useUserData } from '@/context/UserDataContext'
@@ -127,6 +127,21 @@ export function ReviewPage() {
         </span>
         <div className="flex items-center gap-2">
           <span>{stateLabel(current.card.state)}</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent('de:ai-ask', {
+                  detail: `请详细讲解生词 "${current.word}"：词性、含义、常见搭配、2-3 个例句，并说明记忆方法。`,
+                }),
+              )
+            }
+            title="AI 讲解"
+          >
+            <Sparkles className="size-4" aria-hidden="true" />
+            讲解
+          </Button>
           <Button
             size="icon-sm"
             variant="ghost"

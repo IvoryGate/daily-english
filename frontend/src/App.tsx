@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { AuthProvider } from '@/context/AuthContext'
 import { UserDataProvider } from '@/context/UserDataContext'
 import { AccountPage } from '@/components/AccountLayout'
+import { AIChat } from '@/components/AIChat'
 import { SiteHeader } from '@/components/SiteHeader'
 import { ArticleDetailPage } from '@/pages/ArticleDetailPage'
 import { ArticleListPage } from '@/pages/ArticleListPage'
@@ -20,6 +21,7 @@ function App() {
         <UserDataProvider>
           <div className="min-h-screen bg-background">
             <SiteHeader />
+            <AIChat />
             <Routes>
               {/* 前台：阅读内容 */}
               <Route path="/" element={<ArticleListPage />} />
