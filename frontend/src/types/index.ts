@@ -68,6 +68,9 @@ export interface DictMeaning {
 
 export interface DictEntry {
   word: string
-  phonetic?: string
+  phoneticUs?: string
+  phoneticUk?: string
+  audioUs?: string
+  audioUk?: string
   meanings: DictMeaning[]
 }

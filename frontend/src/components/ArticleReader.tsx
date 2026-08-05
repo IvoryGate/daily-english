@@ -141,11 +141,22 @@ function WordPanel({ word, x, y, sourceTitle, onClose }: WordPanelProps) {
     } else {
       await addVocabulary({
         word: word.toLowerCase(),
-        phonetic: entry?.phonetic,
+        phonetic: entry?.phoneticUs ?? entry?.phoneticUk,
         definition: entry?.meanings[0]?.definition,
         sourceTitle,
       })
       setSaved(true)
+    }
+  }
+
+  const handleSpeak = () => {
+    const audio = entry?.audioUs ?? entry?.audioUk
+    if (audio) {
+      const el = new Audio(audio)
+      el.volume = 1
+      el.play().catch(() => speak(word))
+    } else {
+      speak(word)
     }
   }
 
@@ -162,13 +173,16 @@ function WordPanel({ word, x, y, sourceTitle, onClose }: WordPanelProps) {
           <div className="flex items-center gap-1.5">
             <div>
               <h3 className="text-base font-semibold">{word}</h3>
-              {entry?.phonetic && (
-                <p className="text-xs text-muted-foreground">{entry.phonetic}</p>
+              {(entry?.phoneticUs || entry?.phoneticUk) && (
+                <p className="text-xs text-muted-foreground">
+                  <span className="mr-1.5">美 {entry?.phoneticUs}</span>
+                  {entry?.phoneticUk && <span>英 {entry?.phoneticUk}</span>}
+                </p>
               )}
             </div>
             <button
               type="button"
-              onClick={() => speak(word)}
+              onClick={handleSpeak}
               className="flex cursor-pointer items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               aria-label={`朗读 ${word}`}
               title="朗读发音"

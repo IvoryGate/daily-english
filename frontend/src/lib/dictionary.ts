@@ -1,39 +1,45 @@
 import { getDictCache, setDictCache } from '@/lib/storage'
 import type { DictEntry, DictMeaning } from '@/types'
 
-const API_BASE = 'https://api.dictionaryapi.dev/api/v2/entries/en/'
+const API_BASE = '/api/dict/'
 
 function normalize(word: string): string {
   return word.toLowerCase().replace(/[^a-z']/g, '')
 }
 
-function parseEntries(data: unknown): DictEntry | null {
-  if (!Array.isArray(data) || data.length === 0) return null
-  const first = data[0] as Record<string, unknown>
-  const word = String(first.word ?? '')
-  const phonetics = Array.isArray(first.phonetics) ? first.phonetics : []
-  const phonetic =
-    (first.phonetic as string | undefined) ??
-    (phonetics[0] as { text?: string } | undefined)?.text
+interface DictMeaningDTO {
+  partOfSpeech: string
+  definitions: string[]
+}
 
+function parseEntries(data: {
+  word: string
+  phonetic_us?: string
+  phonetic_uk?: string
+  audio_us?: string
+  audio_uk?: string
+  meanings: DictMeaningDTO[]
+}): DictEntry | null {
   const meanings: DictMeaning[] = []
-  for (const m of Array.isArray(first.meanings) ? first.meanings : []) {
-    const mObj = m as {
-      partOfSpeech?: string
-      definitions?: { definition?: string; example?: string }[]
-    }
-    for (const d of mObj.definitions ?? []) {
+  for (const m of data.meanings ?? []) {
+    for (const def of m.definitions ?? []) {
       meanings.push({
-        partOfSpeech: mObj.partOfSpeech ?? '',
-        definition: d.definition ?? '',
-        example: d.example,
+        partOfSpeech: m.partOfSpeech ?? '',
+        definition: def,
       })
-      if (meanings.length >= 3) break
+      if (meanings.length >= 8) break
     }
-    if (meanings.length >= 3) break
+    if (meanings.length >= 8) break
   }
-
-  return { word, phonetic, meanings }
+  if (meanings.length === 0) return null
+  return {
+    word: data.word,
+    phoneticUs: data.phonetic_us || undefined,
+    phoneticUk: data.phonetic_uk || undefined,
+    audioUs: data.audio_us || undefined,
+    audioUk: data.audio_uk || undefined,
+    meanings,
+  }
 }
 
 export async function lookupWord(word: string): Promise<DictEntry | null> {
