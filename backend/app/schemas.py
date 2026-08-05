@@ -152,6 +152,7 @@ class ChatMessageIn(BaseModel):
 class ChatIn(BaseModel):
     messages: list[ChatMessageIn] = Field(min_length=1, max_length=20)
     article_id: int | None = None
+    selected_text: str | None = None
 
 
 class NoteIn(BaseModel):

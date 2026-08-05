@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Bookmark,
   BookmarkCheck,
+  Bot,
   Clock,
   ExternalLink,
   Minus,
@@ -305,6 +306,71 @@ export function ArticleDetailPage() {
           fontSize={fontSize}
         />
       </article>
+
+      <SelectionAskAI />
     </main>
+  )
+}
+
+/** 阅读页：选中文本后弹出 Ask AI 按钮 */
+function SelectionAskAI() {
+  const [selection, setSelection] = useState<{
+    text: string
+    x: number
+    y: number
+  } | null>(null)
+
+  useEffect(() => {
+    const onMouseUp = () => {
+      const sel = window.getSelection()
+      const text = sel?.toString().trim()
+      if (sel && sel.rangeCount > 0 && text && text.length > 0 && text.length < 2000) {
+        const rect = sel.getRangeAt(0).getBoundingClientRect()
+        setSelection({ text, x: rect.right, y: rect.top - 8 })
+      } else {
+        setSelection(null)
+      }
+    }
+    const onScroll = () => setSelection(null)
+    document.addEventListener('mouseup', onMouseUp)
+    document.addEventListener('scroll', onScroll, true)
+    return () => {
+      document.removeEventListener('mouseup', onMouseUp)
+      document.removeEventListener('scroll', onScroll, true)
+    }
+  }, [])
+
+  if (!selection) return null
+
+  const clampedX = Math.min(
+    Math.max(selection.x - 60, 12),
+    window.innerWidth - 140,
+  )
+
+  return (
+    <div
+      className="fixed z-50"
+      style={{ top: selection.y, left: clampedX }}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          window.dispatchEvent(
+            new CustomEvent('de:ai-ask-selection', {
+              detail: {
+                text: selection.text,
+                question:
+                  '请解释这段文本：翻译成中文、讲解其中的生词和语法要点。',
+              },
+            }),
+          )
+          setSelection(null)
+        }}
+        className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-lg transition-transform hover:scale-105"
+      >
+        <Bot className="size-3.5" aria-hidden="true" />
+        Ask AI
+      </button>
+    </div>
   )
 }

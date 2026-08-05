@@ -1,11 +1,12 @@
 import { NavLink, Outlet } from 'react-router'
-import { BookOpen, FilePlus2, LayoutDashboard, ListChecks, Settings } from 'lucide-react'
+import { BookOpen, FilePlus2, FileText, LayoutDashboard, ListChecks, Settings } from 'lucide-react'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
 const tabs = [
   { to: '/account/dashboard', label: '我的学习', icon: LayoutDashboard },
   { to: '/account/vocabulary', label: '生词本', icon: ListChecks },
   { to: '/account/review', label: '复习', icon: BookOpen },
+  { to: '/account/notes', label: '笔记', icon: FileText },
   { to: '/account/settings', label: '设置', icon: Settings },
   { to: '/account/new', label: '添加文章', icon: FilePlus2 },
 ]

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { AtSign, BookOpen, Database, Download, Eraser, KeyRound, Target, UserRound } from 'lucide-react'
+import { AtSign, BookOpen, Bot, Database, Download, Eraser, KeyRound, Target, UserRound } from 'lucide-react'
 import { changePassword, updateUsername } from '@/api/auth'
+import { fetchAIConfig, updateAIConfig, type AIConfig } from '@/api/ai'
 import { fetchGoals, updateGoals } from '@/api/me'
 import { useAuth } from '@/context/AuthContext'
 import { useUserData } from '@/context/UserDataContext'
@@ -29,12 +30,28 @@ export function SettingsPage() {
   const [goalMsg, setGoalMsg] = useState<string | null>(null)
   const [goalError, setGoalError] = useState<string | null>(null)
 
+  const [aiConfig, setAiConfig] = useState<AIConfig | null>(null)
+  const [aiBaseUrl, setAiBaseUrl] = useState('https://api.openai.com/v1')
+  const [aiApiKey, setAiApiKey] = useState('')
+  const [aiModel, setAiModel] = useState('gpt-4o-mini')
+  const [aiMsg, setAiMsg] = useState<string | null>(null)
+  const [aiError, setAiError] = useState<string | null>(null)
+
   useEffect(() => {
     if (!user) return
     fetchGoals()
       .then((g) => {
         setReadGoal(g.read_goal)
         setReviewGoal(g.review_goal)
+      })
+      .catch(() => {})
+    fetchAIConfig()
+      .then((c) => {
+        setAiConfig(c)
+        if (c.has_api_key) {
+          setAiBaseUrl(c.base_url ?? 'https://api.openai.com/v1')
+          setAiModel(c.model ?? 'gpt-4o-mini')
+        }
       })
       .catch(() => {})
   }, [user])
@@ -85,6 +102,40 @@ export function SettingsPage() {
       setGoalMsg('每日目标已保存')
     } catch (err) {
       setGoalError(err instanceof Error ? err.message : '保存失败')
+    }
+  }
+
+  const handleAIConfig = async (e: FormEvent) => {
+    e.preventDefault()
+    setAiMsg(null)
+    setAiError(null)
+    try {
+      const updated = await updateAIConfig({
+        base_url: aiBaseUrl.trim(),
+        api_key: aiApiKey.trim(),
+        model: aiModel.trim(),
+      })
+      setAiConfig(updated)
+      setAiApiKey('')
+      setAiMsg(
+        updated.has_api_key
+          ? `已启用你自己的模型：${updated.model ?? '未设置'}`
+          : '已恢复为默认的 Zen 免费模型',
+      )
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : '保存失败')
+    }
+  }
+
+  const handleUseZen = async () => {
+    setAiMsg(null)
+    setAiError(null)
+    try {
+      const updated = await updateAIConfig({ base_url: '', api_key: '', model: '' })
+      setAiConfig(updated)
+      setAiMsg('已恢复为默认的 Zen 免费模型')
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : '操作失败')
     }
   }
 
@@ -235,6 +286,69 @@ export function SettingsPage() {
           </form>
           {goalMsg && <p className="mt-2 text-xs text-emerald-600">{goalMsg}</p>}
           {goalError && <p className="mt-2 text-xs text-destructive">{goalError}</p>}
+        </section>
+
+        <section className="rounded-xl border bg-card p-5 text-card-foreground">
+          <h2 className="flex items-center gap-2 text-base font-semibold">
+            <Bot className="size-4 text-muted-foreground" aria-hidden="true" />
+            AI 模型
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            默认使用 OpenCode Zen 免费模型（无需 key）；也可以填入你自己的 OpenAI 兼容 API key。
+          </p>
+
+          <div className="mt-3 flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+            <span className="font-medium">
+              {aiConfig?.has_api_key ? '使用中：自定义模型' : '使用中：Zen 免费模型'}
+            </span>
+            {aiConfig?.has_api_key && (
+              <span className="text-xs text-muted-foreground">
+                {aiConfig.base_url} · {aiConfig.model}
+              </span>
+            )}
+          </div>
+
+          <form onSubmit={handleAIConfig} className="mt-4 flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="aiBaseUrl">Base URL</Label>
+              <Input
+                id="aiBaseUrl"
+                value={aiBaseUrl}
+                onChange={(e) => setAiBaseUrl(e.target.value)}
+                placeholder="https://api.openai.com/v1"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="aiApiKey">API Key</Label>
+              <Input
+                id="aiApiKey"
+                type="password"
+                value={aiApiKey}
+                onChange={(e) => setAiApiKey(e.target.value)}
+                placeholder={aiConfig?.has_api_key ? '已配置（留空则保持不变）' : 'sk-...'}
+                autoComplete="off"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="aiModel">模型</Label>
+              <Input
+                id="aiModel"
+                value={aiModel}
+                onChange={(e) => setAiModel(e.target.value)}
+                placeholder="gpt-4o-mini / deepseek-chat"
+              />
+            </div>
+            {aiMsg && <p className="text-xs text-emerald-600">{aiMsg}</p>}
+            {aiError && <p className="text-xs text-destructive">{aiError}</p>}
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit">保存模型配置</Button>
+              {aiConfig?.has_api_key && (
+                <Button type="button" variant="outline" onClick={() => void handleUseZen()}>
+                  恢复 Zen 免费
+                </Button>
+              )}
+            </div>
+          </form>
         </section>
 
         <section className="rounded-xl border bg-card p-5 text-card-foreground">

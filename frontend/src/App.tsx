@@ -9,6 +9,7 @@ import { ArticleListPage } from '@/pages/ArticleListPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NewArticlePage } from '@/pages/NewArticlePage'
+import { NotesPage } from '@/pages/NotesPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { ReviewPage } from '@/pages/ReviewPage'
 import { SettingsPage } from '@/pages/SettingsPage'
@@ -35,6 +36,7 @@ function App() {
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="vocabulary" element={<VocabularyPage />} />
                 <Route path="review" element={<ReviewPage />} />
+                <Route path="notes" element={<NotesPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="new" element={<NewArticlePage />} />
               </Route>

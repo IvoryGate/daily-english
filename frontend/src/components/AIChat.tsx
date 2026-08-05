@@ -31,6 +31,7 @@ export function AIChat() {
   const [messages, setMessages] = useState<AIMessage[]>([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
+  const [pendingSelection, setPendingSelection] = useState<string | undefined>()
   const abortRef = useRef<AbortController | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -49,22 +50,34 @@ export function AIChat() {
 
   // 接收外部触发的"AI 提问"（生词本/复习页按钮 → CustomEvent）
   useEffect(() => {
-    const handler = (e: Event) => {
+    const askHandler = (e: Event) => {
       const question = (e as CustomEvent<string>).detail
       setOpen(true)
       setMessages([]) // 新会话
       setInput(question)
     }
-    window.addEventListener('de:ai-ask', handler)
-    return () => window.removeEventListener('de:ai-ask', handler)
+    const selectionHandler = (e: Event) => {
+      const detail = (e as CustomEvent<{ text: string; question: string }>).detail
+      setPendingSelection(detail.text)
+      setOpen(true)
+      setMessages([])
+      setInput(detail.question)
+    }
+    window.addEventListener('de:ai-ask', askHandler)
+    window.addEventListener('de:ai-ask-selection', selectionHandler)
+    return () => {
+      window.removeEventListener('de:ai-ask', askHandler)
+      window.removeEventListener('de:ai-ask-selection', selectionHandler)
+    }
   }, [])
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, selection?: string) => {
       if (!text.trim() || busy) return
       const userMsg: AIMessage = { role: 'user', content: text.trim() }
       setMessages((prev) => [...prev, userMsg])
       setInput('')
+      setPendingSelection(undefined)
       setBusy(true)
 
       const history = messages
@@ -105,6 +118,7 @@ export function AIChat() {
             }
           },
           abort.signal,
+          selection ?? pendingSelection,
         )
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
@@ -115,7 +129,7 @@ export function AIChat() {
         abortRef.current = null
       }
     },
-    [busy, messages, articleId],
+    [busy, messages, articleId, pendingSelection],
   )
 
   const stop = () => {

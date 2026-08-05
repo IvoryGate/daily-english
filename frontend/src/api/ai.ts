@@ -13,6 +13,13 @@ export interface AIMessage {
   toolCalls?: { name: string; args: Record<string, unknown> }[]
 }
 
+export interface NoteOut {
+  id: number
+  article_id: number | null
+  content: string
+  created_at: string
+}
+
 export async function fetchAIConfig(): Promise<AIConfig> {
   const token = getToken()
   if (!token) throw new Error('未登录')
@@ -57,6 +64,7 @@ export async function streamChat(
   articleId: number | undefined,
   onEvent: (event: AIChatEvent) => void,
   signal?: AbortSignal,
+  selectedText?: string,
 ): Promise<void> {
   const token = getToken()
   if (!token) throw new Error('未登录')
@@ -66,7 +74,7 @@ export async function streamChat(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ messages, article_id: articleId }),
+    body: JSON.stringify({ messages, article_id: articleId, selected_text: selectedText }),
     signal,
   })
   if (!res.ok) {

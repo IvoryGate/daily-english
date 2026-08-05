@@ -71,7 +71,7 @@ def list_models() -> dict[str, Any]:
 
 
 def _build_messages(payload: ChatIn, db: Session, user: User) -> list[dict[str, Any]]:
-    """构造 messages：可注入文章上下文。"""
+    """构造 messages：可注入文章/选中文本上下文。"""
     messages: list[dict[str, Any]] = [
         {"role": m.role, "content": m.content} for m in payload.messages
     ]
@@ -92,6 +92,17 @@ def _build_messages(payload: ChatIn, db: Session, user: User) -> list[dict[str, 
                     ),
                 },
             )
+    if payload.selected_text:
+        messages.insert(
+            0,
+            {
+                "role": "user",
+                "content": (
+                    f"[系统注入] 用户选中了以下文本，请优先围绕它回答（翻译/解释/总结）：\n"
+                    f"---选中文本---\n{payload.selected_text[:1500]}\n---"
+                ),
+            },
+        )
     return messages
 
 
