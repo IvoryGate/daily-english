@@ -6,7 +6,8 @@
 
 ## 当前进度
 
-**阶段 01~30 全部完成 ✅（规划 → 用户体系 → 复盘 → 视觉优化 → 学习体系 → 架构重排 → AI 集成 → 设计调研与主题系统 → 导航 → 学习路径 → 词汇量估算 → 推荐冷启动 → 笔记编辑器）**
+**阶段 01~31 全部完成 ✅（规划 → 用户体系 → 复盘 → 视觉优化 → 学习体系 → 架构重排 → AI 集成 → 设计调研与主题系统 → 导航 → 学习路径 → 词汇量估算 → 推荐冷启动 → 笔记编辑器 → 所见即所得）**
+> 阶段 31 完成（笔记编辑器所见即所得）：引入 `@mdxeditor/editor`（Lexical 底层），封装 `NoteEditor` 组件替代阶段 30 的「左源码右预览」分屏——编辑区即渲染区（输入即格式化），工具栏含 Undo/Redo、Block 类型(标题/列表)、粗斜下划线、链接、代码块、List、以及 Rich text/Diff/Source 三种编辑模式；主题经 CSS 变量映射到 shadcn token（明暗自适应，dark 下文本变浅色）。NotesPage 移除分屏与手写工具栏，接入 NoteEditor，列表项仍用 react-markdown 渲染，见 [`31-所见即所得笔记编辑器.md`](./31-所见即所得笔记编辑器.md)。
 > 阶段 30 完成（笔记 Markdown 编辑器）：后端新增 `PATCH /api/ai/notes/{id}` + `NoteUpdate` schema（前端已有 POST/DELETE 接口封装化）；NotesPage 从「纯文本展示+删除」改造成分屏 Markdown 编辑器——「写新笔记」手写、铅笔编辑已有笔记、左编辑右实时预览（react-markdown + remark-gfm 渲染，复用 AI 聊天的渲染链路）、加粗/斜体/标题/代码/链接/列表工具栏、移动端隐藏预览只留编辑。AI 助手保存的旧笔记同样以 Markdown 渲染展示，见 [`30-笔记编辑器.md`](./30-笔记编辑器.md)。
 > 阶段 29 完成（推荐冷启动增强）：「为你推荐」不再仅限登录 + 有等级用户。已登录且有等级 → 走等级词汇画像区间（≤上限，区间空时用跨档兜底）；未登录 / 新用户(等级 0) → 走入门档（senior 上限）并排除超纲，按词汇难度升序取 3 篇。首页对冷启动用户也能即时给出指引，见 [`29-推荐冷启动.md`](./29-推荐冷启动.md)。
 > 阶段 28 完成（词汇量估算 + 首页推荐词汇画像化）：后端 `vocab_estimate`——按已掌握生词在 8 级词表的分布单调外推总词汇量（能力单调假设，低级别比例不小于高级别；已掌握 <10 词时稀疏保护不外推）。`/api/me/stats` 返回估算值 + 每级掌握占比；Dashboard 词汇量卡片改显「估算词汇量」+ 8 级分布进度条；首页「为你推荐」改为按等级词汇画像区间（`vocabRangeForLevel` + `maxVocabForLevel`）筛未读、按词汇难度升序推荐。修复 `db.scalars` 对多列 select 只取首列的 unpack bug，见 [`28-词汇量估算.md`](./28-词汇量估算.md)。
@@ -196,3 +197,11 @@
 - **决策记录**：用 textarea + react-markdown 而非完整编辑器库（TipTap 等）——已装依赖、零新增、够用；预览样式通过 `[&_h2]` 等 Tailwind 任意变体统一，避免引入 typography 插件
 - **踩坑记录**：CDP 脚本 `Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set` 注入 React 受控 textarea 不生效（值被 React 还原为空），改用 CDP `Input.insertText` 真实键盘输入后验证通过——受控组件需真实用户输入事件，纯 setter 模拟不可靠
 - **详细记录**：见 [`30-笔记编辑器.md`](./30-笔记编辑器.md)
+
+### 阶段 31：笔记编辑器所见即所得
+
+- **日期**：2026-08-06
+- **完成内容**：引入 `@mdxeditor/editor@4.2.0`（Lexical 底层，兼容 React 19）替代阶段 30 的分屏预览。封装 `NoteEditor` 组件（`frontend/src/components/NoteEditor.tsx`）：编辑区即渲染区、输入即格式化；工具栏 Undo/Redo、BlockTypeSelect、粗斜下划线、列表切换、CreateLink、代码块，含 Rich text / Diff / Source 三种模式；`useEffect` 同步受控 value 到 `setMarkdown`；`contentEditableClassName` 走自定义 CSS。NotesPage 移除 Textarea + 工具栏 + 预览分屏，编辑态直接用 NoteEditor，列表仍 react-markdown 渲染
+- **决策记录**：Typora 式交互（编辑即渲染）选专业库 mdx-editor 而非手写 contenteditable——零原生 bug、自带工具栏/三模式；主题用 CSS 变量映射到 shadcn token 而非引 typography 插件
+- **踩坑记录**：`suppressContentEditableWarning` 不在 MDXEditorProps 里导致类型报错（删掉即过）；v4 用 `.dark` class 而非 data-color-mode 判断明暗（项目 html.dark 天然对齐）；`Input.insertText` 打字后 `## ` 不会自动转 heading（mdx-editor 非 Typora 的输入即转，需工具栏/快捷键）
+- **详细记录**：见 [`31-所见即所得笔记编辑器.md`](./31-所见即所得笔记编辑器.md)
