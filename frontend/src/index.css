@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import "@mdxeditor/editor/style.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -320,4 +321,104 @@ html[data-palette='notion'].dark {
 }
 .ai-markdown th {
   @apply font-semibold;
+}
+
+/* ---- 笔记编辑器（@mdxeditor/editor）主题对齐 ---- */
+.mdxeditor {
+  --baseBg: var(--card);
+  --baseBgActive: var(--muted);
+  --baseBgHover: var(--muted);
+  --baseBgFocus: var(--muted);
+  --baseBgDisabled: var(--muted);
+  --baseText: var(--foreground);
+  --baseTextContrast: var(--foreground);
+  --baseTextSubtle: var(--muted-foreground);
+  --baseBorder: var(--border);
+  --baseBorderMuted: var(--border);
+  --baseBorderRadius: calc(var(--radius) - 2px);
+  --baseButtonBg: transparent;
+  --baseButtonBgActive: var(--muted);
+  --baseButtonBgHover: var(--muted);
+  --baseButtonBgDisabled: var(--muted);
+  --baseButtonText: var(--muted-foreground);
+  --baseButtonTextActive: var(--foreground);
+  --baseButtonTextHover: var(--foreground);
+  --baseButtonTextDisabled: var(--muted-foreground);
+  --baseButtonBorderRadius: calc(var(--radius) - 2px);
+  --baseFocus: color-mix(in oklab, var(--ring) 40%, transparent);
+  --baseSelectionBg: color-mix(in oklab, var(--primary) 22%, transparent);
+  --baseTable: var(--border);
+  --primaryBg: var(--muted);
+  --primaryText: var(--foreground);
+  --primaryBgActive: color-mix(in oklab, var(--primary) 14%, transparent);
+  --primaryTextActive: var(--primary);
+  --primaryBgHover: color-mix(in oklab, var(--primary) 10%, transparent);
+  --primaryTextHover: var(--primary);
+  --primaryBgDisabled: var(--muted);
+  --primaryTextDisabled: var(--muted-foreground);
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  color: var(--foreground);
+}
+
+.mdxeditor[data-color-mode='dark'] {
+  color-scheme: dark;
+}
+
+.mdxeditor-contenteditable,
+.mdxeditor-content-editable {
+  min-height: 16rem;
+  padding: 1rem 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+.mdxeditor-contenteditable h1,
+.mdxeditor-content-editable h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0.75em 0 0.25em;
+}
+.mdxeditor-contenteditable h2,
+.mdxeditor-content-editable h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0.75em 0 0.25em;
+}
+.mdxeditor-contenteditable h3,
+.mdxeditor-content-editable h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0.6em 0 0.2em;
+}
+.mdxeditor-contenteditable p,
+.mdxeditor-content-editable p {
+  margin: 0.4em 0;
+}
+.mdxeditor-contenteditable ul,
+.mdxeditor-content-editable ol {
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+  list-style: revert;
+}
+.mdxeditor-contenteditable code {
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--muted);
+  padding: 0.1em 0.35em;
+  font-size: 0.85em;
+}
+.mdxeditor-contenteditable pre {
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--muted);
+  padding: 0.75em 1em;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+.mdxeditor-contenteditable blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 0.75em;
+  color: var(--muted-foreground);
+  margin: 0.5em 0;
+}
+.mdxeditor-contenteditable a {
+  color: var(--primary);
+  text-decoration: underline;
 }
