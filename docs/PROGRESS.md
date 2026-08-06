@@ -6,7 +6,8 @@
 
 ## 当前进度
 
-**阶段 01~29 全部完成 ✅（规划 → 用户体系 → 复盘 → 视觉优化 → 学习体系 → 架构重排 → AI 集成 → 设计调研与主题系统 → 导航 → 学习路径 → 词汇量估算 → 推荐冷启动）**
+**阶段 01~30 全部完成 ✅（规划 → 用户体系 → 复盘 → 视觉优化 → 学习体系 → 架构重排 → AI 集成 → 设计调研与主题系统 → 导航 → 学习路径 → 词汇量估算 → 推荐冷启动 → 笔记编辑器）**
+> 阶段 30 完成（笔记 Markdown 编辑器）：后端新增 `PATCH /api/ai/notes/{id}` + `NoteUpdate` schema（前端已有 POST/DELETE 接口封装化）；NotesPage 从「纯文本展示+删除」改造成分屏 Markdown 编辑器——「写新笔记」手写、铅笔编辑已有笔记、左编辑右实时预览（react-markdown + remark-gfm 渲染，复用 AI 聊天的渲染链路）、加粗/斜体/标题/代码/链接/列表工具栏、移动端隐藏预览只留编辑。AI 助手保存的旧笔记同样以 Markdown 渲染展示，见 [`30-笔记编辑器.md`](./30-笔记编辑器.md)。
 > 阶段 29 完成（推荐冷启动增强）：「为你推荐」不再仅限登录 + 有等级用户。已登录且有等级 → 走等级词汇画像区间（≤上限，区间空时用跨档兜底）；未登录 / 新用户(等级 0) → 走入门档（senior 上限）并排除超纲，按词汇难度升序取 3 篇。首页对冷启动用户也能即时给出指引，见 [`29-推荐冷启动.md`](./29-推荐冷启动.md)。
 > 阶段 28 完成（词汇量估算 + 首页推荐词汇画像化）：后端 `vocab_estimate`——按已掌握生词在 8 级词表的分布单调外推总词汇量（能力单调假设，低级别比例不小于高级别；已掌握 <10 词时稀疏保护不外推）。`/api/me/stats` 返回估算值 + 每级掌握占比；Dashboard 词汇量卡片改显「估算词汇量」+ 8 级分布进度条；首页「为你推荐」改为按等级词汇画像区间（`vocabRangeForLevel` + `maxVocabForLevel`）筛未读、按词汇难度升序推荐。修复 `db.scalars` 对多列 select 只取首列的 unpack bug，见 [`28-词汇量估算.md`](./28-词汇量估算.md)。
 > 阶段 27 完成（学习路径）：给文章算词汇画像（按正文词形归并后标注 8 级，取 50% 累计级别 + 加权词汇分）；Article 加 vocab_level/vocab_score 并回填 50 篇；词表重生成修复 ECDICT 覆盖稀疏（junior 849→1603，基础词如 run/sleep 正确归位）；`/api/articles` 支持 vocab_level 过滤 + sort=easiest；新增 `/path` 学习路径页（8 级阶梯 + 登录等级建议区间 + 点击切换级档文章），见 [`27-学习路径.md`](./27-学习路径.md)。
@@ -187,3 +188,11 @@
 - **决策记录**：冷启动用户（无行为、无等级）最需要"从哪篇开始"的引导，推荐不应对其隐藏；入门档用 senior 上限兜底保证有推荐可读且不过度过滤
 - **踩坑记录**：WSL 挂载盘 mtime 精度问题再次出现——vite 喂旧代码导致 CDP 验证失败，需重启 vite 清缓存后重新验证
 - **详细记录**：见 [`29-推荐冷启动.md`](./29-推荐冷启动.md)
+
+### 阶段 30：笔记 Markdown 编辑器
+
+- **日期**：2026-08-06
+- **完成内容**：笔记能力从「AI 独写 + 纯文本只读」升级为「人人可写 + Markdown 渲染」。后端新增 `PATCH /api/ai/notes/{id}`（`NoteUpdate` schema，用户只能改自己的笔记）并把笔记 CRUD 封装进 `frontend/src/api/ai.ts`（fetchNotes/createNote/updateNote/deleteNote）；NotesPage 重构：顶部「写新笔记」+ 列表铅笔编辑按钮、左编辑右实时预览分屏（react-markdown + remark-gfm，样式与 AI 聊天一致）、工具栏（加粗/斜体/标题/行内代码/链接/列表，光标处插入）、移动端隐藏预览只留编辑、保存后列表即时更新
+- **决策记录**：用 textarea + react-markdown 而非完整编辑器库（TipTap 等）——已装依赖、零新增、够用；预览样式通过 `[&_h2]` 等 Tailwind 任意变体统一，避免引入 typography 插件
+- **踩坑记录**：CDP 脚本 `Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set` 注入 React 受控 textarea 不生效（值被 React 还原为空），改用 CDP `Input.insertText` 真实键盘输入后验证通过——受控组件需真实用户输入事件，纯 setter 模拟不可靠
+- **详细记录**：见 [`30-笔记编辑器.md`](./30-笔记编辑器.md)
