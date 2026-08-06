@@ -105,27 +105,27 @@ export function ArticleListPage() {
     return filteredBySource[dayNumber % filteredBySource.length]
   }, [filteredBySource])
 
-  // 为你推荐：登录后按等级推荐「词汇画像合适」的未读文章（基于 /path 学习路径能力）
+  // 为你推荐：按「词汇画像合适」的未读文章（基于 /path 学习路径能力）。
+  // 已登录且有等级 → 走用户等级画像区间；未登录 / 新用户(等级 0) → 走入门档，
+  // 让冷启动用户也能获得指引（新用户最容易的文章）。
   const recommended = useMemo(() => {
-    if (!stats || stats.level.level === 0) return []
-    const range = vocabRangeForLevel(stats.level.level)
-    const maxLevel = maxVocabForLevel(stats.level.level)
+    const level = stats?.level.level ?? 0
+    const maxLevel = level > 0 ? maxVocabForLevel(level) : 'senior'
     const maxIdx = VOCAB_LEVELS.indexOf(maxLevel)
-    const inRange = articles.filter((a) => {
+    const candidates = articles.filter((a) => {
       const lv = a.vocabLevel
       if (!lv || lv === 'advanced') return false
-      return range.includes(lv as VocabLevel)
+      const rank = VOCAB_LEVELS.indexOf(lv as VocabLevel)
+      if (rank > maxIdx) return false
+      // 有等级时更贴合其画像区间，但区间为空时以「≤上限」兜底，不过度限制
+      if (level > 0) {
+        const range = vocabRangeForLevel(level)
+        if (range.includes(lv as VocabLevel)) return true
+      }
+      return true
     })
-    // 容错：允许读到上限（建议区间为空时用跨度容纳），但不超过上限
-    const pool = inRange.length > 0
-      ? inRange
-      : articles.filter((a) => {
-          const lv = a.vocabLevel
-          if (!lv || lv === 'advanced') return false
-          return VOCAB_LEVELS.indexOf(lv as VocabLevel) <= maxIdx
-        })
-    const unread = pool.filter((a) => !reading[a.id])
-    const pick = (unread.length > 0 ? unread : pool)
+    const unread = candidates.filter((a) => !reading[a.id])
+    const pick = (unread.length > 0 ? unread : candidates)
       .slice()
       .sort((a, b) => (a.vocabScore ?? 0) - (b.vocabScore ?? 0))
     return pick.slice(0, 3)
@@ -247,14 +247,16 @@ export function ArticleListPage() {
       <div className="grid gap-8 lg:grid-cols-[1fr_240px]">
         {/* 左栏：推荐 + 搜索 + 文章列表/骨架 */}
         <div className="min-w-0">
-          {user && recommended.length > 0 && (
+          {recommended.length > 0 && (
             <section className="mb-8">
               <div className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
                 <Wand2 className="size-4 text-primary" aria-hidden="true" />
                 为你推荐
-                <span className="text-xs font-normal text-muted-foreground">
-                  Lv{stats?.level.level} {stats?.level.name}
-                </span>
+                {stats && stats.level.level > 0 && (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    Lv{stats.level.level} {stats.level.name}
+                  </span>
+                )}
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 {recommended.map((article) => (
