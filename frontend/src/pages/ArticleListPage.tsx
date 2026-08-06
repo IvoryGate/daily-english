@@ -11,7 +11,13 @@ import { fetchStats, type StatsData } from '@/api/me'
 import { useArticles } from '@/hooks/useArticles'
 import { useAuth } from '@/context/AuthContext'
 import { useUserData } from '@/context/UserDataContext'
-import { difficultyForLevel, difficultyLabels, difficultyStyles } from '@/lib/difficulty'
+import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
+import {
+  maxVocabForLevel,
+  VOCAB_LEVELS,
+  vocabRangeForLevel,
+  type VocabLevel,
+} from '@/lib/learningPath'
 import { sourceLabel } from '@/lib/sourceLabels'
 import type { ArticleSource, Difficulty } from '@/types'
 import type { SortKey } from '@/api/articles'
@@ -99,14 +105,30 @@ export function ArticleListPage() {
     return filteredBySource[dayNumber % filteredBySource.length]
   }, [filteredBySource])
 
-  // 为你推荐：登录后按等级推荐合适难度的未读文章
+  // 为你推荐：登录后按等级推荐「词汇画像合适」的未读文章（基于 /path 学习路径能力）
   const recommended = useMemo(() => {
     if (!stats || stats.level.level === 0) return []
-    const levels = difficultyForLevel(stats.level.level)
-    const pool = articles.filter((a) => levels.includes(a.difficulty))
+    const range = vocabRangeForLevel(stats.level.level)
+    const maxLevel = maxVocabForLevel(stats.level.level)
+    const maxIdx = VOCAB_LEVELS.indexOf(maxLevel)
+    const inRange = articles.filter((a) => {
+      const lv = a.vocabLevel
+      if (!lv || lv === 'advanced') return false
+      return range.includes(lv as VocabLevel)
+    })
+    // 容错：允许读到上限（建议区间为空时用跨度容纳），但不超过上限
+    const pool = inRange.length > 0
+      ? inRange
+      : articles.filter((a) => {
+          const lv = a.vocabLevel
+          if (!lv || lv === 'advanced') return false
+          return VOCAB_LEVELS.indexOf(lv as VocabLevel) <= maxIdx
+        })
     const unread = pool.filter((a) => !reading[a.id])
-    // 优先未读，取前 3 篇
-    return (unread.length > 0 ? unread : pool).slice(0, 3)
+    const pick = (unread.length > 0 ? unread : pool)
+      .slice()
+      .sort((a, b) => (a.vocabScore ?? 0) - (b.vocabScore ?? 0))
+    return pick.slice(0, 3)
   }, [stats, articles, reading])
 
   const goRandom = () => {

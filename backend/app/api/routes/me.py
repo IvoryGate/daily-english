@@ -283,6 +283,7 @@ from app.gamification import (  # noqa: E402
     mastered_vocab,
     review_trend,
     total_counts,
+    vocab_estimate,
     vocabulary_curve,
 )
 from app.models import Achievement, ReviewHistory  # noqa: E402
@@ -391,6 +392,7 @@ def get_stats(
         "vocabulary_curve": vocabulary_curve(db, user),
         "review_trend": review_trend(db, user),
         "mastered_vocab": mastered_vocab(db, user),
+        "vocab_estimate": vocab_estimate(db, user),
     }
 
 

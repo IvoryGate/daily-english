@@ -279,3 +279,87 @@ def mastered_vocab(db: Session, user: User) -> int:
         if (card.get("state") or 0) >= 2 and (card.get("reps") or 0) >= 3:
             mastered += 1
     return mastered
+
+
+# 词表各级总词数（后端 word_lists.json 的实际规模，随数据更新）
+_LEVEL_SIZE = {
+    "junior": 1603,
+    "senior": 3677,
+    "cet4": 3849,
+    "cet6": 5407,
+    "ielts": 5040,
+    "toefl": 6974,
+    "tem8": 2758,
+    "advanced": 10556,
+}
+_LEVEL_ORDER = ["junior", "senior", "cet4", "cet6", "ielts", "toefl", "tem8", "advanced"]
+
+
+def vocab_estimate(db: Session, user: User) -> dict:
+    """估算用户词汇量：按已掌握生词在 8 级的分布，外推总词汇量。
+
+    模型（能力单调假设）：
+      - 每级「已掌握数」来自生词本中 FSRS 已掌握的词（state>=2 且 reps>=3）
+      - 掌握比例 r_lv = 已掌握数 / 该级词表总量；由低到高逐级累计，
+        且保证低级别比例不低于高级别（能力单调：会高级词必然也会低级词）
+      - 估算词汇量 = Σ(每级总词数 × 有效掌握比例)
+    返回 {estimate, per_level:[{level,label,total,owned}]}
+    """
+    from app.crawler.lemmatize import lemmatize
+    from app.crawler.word_level import level_of
+
+    rows = db.execute(
+        select(VocabularyEntry.word, VocabularyEntry.card).where(
+            VocabularyEntry.user_id == user.id
+        )
+    ).all()
+    mastered_by_level: dict[str, int] = {lv: 0 for lv in _LEVEL_ORDER}
+    for word, card in rows:
+        if not isinstance(card, dict):
+            card = {}
+        if (card.get("state") or 0) < 2 or (card.get("reps") or 0) < 3:
+            continue
+        base = lemmatize(word.strip().lower())
+        lv = level_of(base)
+        mastered_by_level[lv] = mastered_by_level.get(lv, 0) + 1
+
+    # 由低到高累积有效比例（能力单调：低级别比例取已出现过的最大比例）
+    per_level = []
+    running = 0.0
+    estimate = 0
+    for lv in _LEVEL_ORDER:
+        size = _LEVEL_SIZE.get(lv, 1000)
+        ratio = max(mastered_by_level[lv] / size if size else 0.0, running)
+        running = ratio
+        owned_est = int(size * ratio)
+        estimate += owned_est
+        per_level.append(
+            {
+                "level": lv,
+                "label": _level_label(lv),
+                "total": size,
+                "owned": owned_est,
+            }
+        )
+
+    total_mastered = sum(mastered_by_level.values())
+    # 数据稀疏保护：已掌握生词太少时统计无意义，不外推（直接给已掌握数）
+    if total_mastered < 10:
+        estimate = total_mastered
+    # 底线：估算至少等于实际已掌握生词总数
+    estimate = max(estimate, total_mastered)
+    return {"estimate": estimate, "per_level": per_level}
+
+
+def _level_label(level: str) -> str:
+    labels = {
+        "junior": "初中",
+        "senior": "高中",
+        "cet4": "四级",
+        "cet6": "六级",
+        "ielts": "雅思",
+        "toefl": "托福",
+        "tem8": "专八",
+        "advanced": "超纲",
+    }
+    return labels.get(level, level)

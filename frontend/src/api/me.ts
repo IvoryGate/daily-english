@@ -180,6 +180,18 @@ export interface TodayProgress {
   checked_in: boolean
 }
 
+export interface VocabEstimateLevel {
+  level: string
+  label: string
+  total: number
+  owned: number
+}
+
+export interface VocabEstimate {
+  estimate: number
+  per_level: VocabEstimateLevel[]
+}
+
 export interface StatsData {
   read_count: number
   vocab_count: number
@@ -194,6 +206,7 @@ export interface StatsData {
   vocabulary_curve: CurvePoint[]
   review_trend: TrendPoint[]
   mastered_vocab: number
+  vocab_estimate: VocabEstimate
 }
 
 export async function fetchStats(): Promise<StatsData> {

@@ -369,21 +369,44 @@ export function DashboardPage() {
                       className="size-5 text-primary"
                       aria-hidden="true"
                     />
-                    词汇量增长
+                    词汇量
                   </h2>
-                  <div className="rounded-xl border bg-card p-4 text-card-foreground">
-                    <div className="flex items-baseline gap-3">
-                      <p className="text-2xl font-bold tracking-tight">
-                        {stats.vocab_count}
+                  <div className="flex flex-col gap-4 rounded-xl border p-4 sm:flex-row">
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-3">
+                        <p className="text-2xl font-bold tracking-tight">
+                          {stats.vocab_estimate?.estimate ?? stats.vocab_count}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          估算词汇量 · 已掌握 {stats.mastered_vocab} 词
+                        </p>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        近 3 个月生词量累计曲线
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        生词，其中已掌握 {stats.mastered_vocab} 词
-                      </p>
+                      <LineChart data={stats.vocabulary_curve} />
                     </div>
-                    <LineChart data={stats.vocabulary_curve} />
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      近 3 个月生词量累计曲线
-                    </p>
+                    {stats.vocab_estimate?.per_level?.length > 0 && (
+                      <div className="flex-1 space-y-2">
+                        {stats.vocab_estimate.per_level.map((lv) => {
+                          const pct = lv.total ? (lv.owned / lv.total) * 100 : 0
+                          return (
+                            <div key={lv.level}>
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>{lv.label}</span>
+                                <span>{pct.toFixed(1)}% 掌握</span>
+                              </div>
+                              <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                                <div
+                                  className="h-full rounded-full bg-primary/70"
+                                  style={{ width: `${Math.min(100, pct)}%` }}
+                                />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
