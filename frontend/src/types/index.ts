@@ -31,6 +31,9 @@ export interface Article {
   sourceUrl?: string
   /** 文章配图 */
   imageUrl?: string
+  /** 词汇画像（阶段 27 学习路径）：词汇级别（junior~advanced）+ 词汇分 0~100 */
+  vocabLevel?: string
+  vocabScore?: number
 }
 
 export interface VocabEntry {

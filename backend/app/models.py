@@ -30,6 +30,9 @@ class Article(Base):
     source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     # 文章配图（来自原文页 og:image）
     image_url: Mapped[str | None] = mapped_column(String(800), nullable=True)
+    # 词汇画像（阶段 27 学习路径）：词汇级别 + 词汇分（0~100，越小越简单）
+    vocab_level: Mapped[str] = mapped_column(String(20), default="junior")
+    vocab_score: Mapped[float] = mapped_column(Float, default=0.0)
 
 
 class User(Base):

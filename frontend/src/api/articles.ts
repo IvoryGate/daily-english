@@ -21,6 +21,8 @@ interface ArticleSummaryDTO {
   source: string
   source_url: string | null
   image_url: string | null
+  vocab_level?: string
+  vocab_score?: number
 }
 
 interface ArticleDetailDTO extends ArticleSummaryDTO {
@@ -40,6 +42,8 @@ function toArticle(dto: ArticleSummaryDTO & { content?: string }): Article {
     source: (dto.source as ArticleSource) ?? 'seed',
     sourceUrl: dto.source_url ?? undefined,
     imageUrl: dto.image_url ?? undefined,
+    vocabLevel: dto.vocab_level,
+    vocabScore: dto.vocab_score,
   }
 }
 
@@ -101,6 +105,15 @@ export async function fetchArticles(
   const local = getLocalArticles()
   const merged = [...server, ...local]
   return applySort(merged.filter((a) => matches(a, query)), query.sort ?? 'latest')
+}
+
+/** 按词汇画像拉文章：过滤指定词汇级别 + 按词汇分升序（最易在前）。 */
+export async function fetchArticlesByVocab(
+  vocabLevel: string,
+): Promise<Article[]> {
+  const url = `/api/articles?vocab_level=${encodeURIComponent(vocabLevel)}&sort=easiest`
+  const data = await request<ArticleSummaryDTO[]>(url)
+  return data.map(toArticle)
 }
 
 export async function fetchArticle(id: number): Promise<Article | undefined> {

@@ -117,6 +117,9 @@ export function SiteHeader() {
           <NavLink to="/" className={navLinkClass} end>
             文章
           </NavLink>
+          <NavLink to="/path" className={navLinkClass}>
+            学习路径
+          </NavLink>
         </nav>
 
         {/* 中：搜索（占位，提交跳首页并带 q） */}

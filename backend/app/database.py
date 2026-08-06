@@ -43,6 +43,14 @@ def migrate() -> None:
             conn.execute(text("ALTER TABLE articles ADD COLUMN source_url VARCHAR(500)"))
         if "image_url" not in columns:
             conn.execute(text("ALTER TABLE articles ADD COLUMN image_url VARCHAR(800)"))
+        if "vocab_level" not in columns:
+            conn.execute(
+                text("ALTER TABLE articles ADD COLUMN vocab_level VARCHAR(20) DEFAULT 'junior'")
+            )
+        if "vocab_score" not in columns:
+            conn.execute(
+                text("ALTER TABLE articles ADD COLUMN vocab_score FLOAT DEFAULT 0.0")
+            )
 
     with engine.begin() as conn:
         user_columns = {

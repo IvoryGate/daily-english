@@ -22,9 +22,7 @@ import sys
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parent.parent / "data" / "word_lists.json"
-ECDICT = Path("/tmp/ecdict.csv")
-
-# ECDICT tag -> 本项目级别
+ECDICT = Path("/tmp/ecdict.csv")# ECDICT tag -> 本项目级别
 TAG_LEVEL = {
     "zk": "junior",
     "gk": "senior",
@@ -79,6 +77,13 @@ def main() -> None:
                     w = word.lower()
                     if w and w not in buckets["advanced"]:
                         buckets["tem8"].add(w)
+    else:
+        # 无独立专八表时，从旧产物回填 tem8（避免重跑丢档）
+        if OUT.exists():
+            with open(OUT, encoding="utf-8") as f:
+                prev = json.load(f)
+            buckets["tem8"] |= set(prev.get("tem8", []))
+            print("（无 /tmp/tem8.txt，从旧产物回填 tem8）")
 
     # 4. 输出（每级 = 带该标签的全部词，天然前缀包含低级别）
     result: dict[str, list[str]] = {

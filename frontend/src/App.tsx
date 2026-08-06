@@ -14,6 +14,7 @@ import { RegisterPage } from '@/pages/RegisterPage'
 import { ReviewPage } from '@/pages/ReviewPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { VocabularyPage } from '@/pages/VocabularyPage'
+import { LearningPathPage } from '@/pages/LearningPathPage'
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Routes>
               {/* 前台：阅读内容 */}
               <Route path="/" element={<ArticleListPage />} />
+              <Route path="/path" element={<LearningPathPage />} />
               <Route path="/articles/:id" element={<ArticleDetailPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />

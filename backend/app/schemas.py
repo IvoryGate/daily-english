@@ -17,6 +17,9 @@ class ArticleSummary(BaseModel):
     source: str = "seed"
     source_url: str | None = None
     image_url: str | None = None
+    # 词汇画像（阶段 27 学习路径）
+    vocab_level: str = "junior"
+    vocab_score: float = 0.0
 
 
 class ArticleDetail(ArticleSummary):

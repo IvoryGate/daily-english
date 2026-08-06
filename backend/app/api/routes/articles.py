@@ -22,6 +22,8 @@ def _to_summary(row: Article) -> ArticleSummary:
         source=row.source,
         source_url=row.source_url,
         image_url=row.image_url,
+        vocab_level=row.vocab_level,
+        vocab_score=row.vocab_score,
     )
 
 
@@ -38,9 +40,14 @@ def list_articles(
     source: str | None = None,
     q: str | None = None,
     difficulty: str | None = None,
+    vocab_level: str | None = None,
+    sort: str | None = None,
     db: Session = Depends(get_db),
 ) -> list[ArticleSummary]:
-    """返回文章列表（摘要信息，不含正文），按创建时间倒序。可组合过滤：来源/关键词/难度。"""
+    """返回文章列表（摘要信息，不含正文）。
+
+    过滤器：来源 / 关键词 / 难度 / 词汇级别；排序：latest（默认）或 vocab（按词汇分升序，最易在前）。
+    """
     query = select(Article)
     if source:
         query = query.where(Article.source == source)
@@ -55,7 +62,13 @@ def list_articles(
         )
     if difficulty:
         query = query.where(Article.difficulty == difficulty)
-    rows = db.scalars(query.order_by(Article.created_at.desc())).all()
+    if vocab_level:
+        query = query.where(Article.vocab_level == vocab_level)
+    if sort == "easiest":
+        query = query.order_by(Article.vocab_score.asc())
+    else:
+        query = query.order_by(Article.created_at.desc())
+    rows = db.scalars(query).all()
     return [_to_summary(row) for row in rows]
 
 
