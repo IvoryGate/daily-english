@@ -127,10 +127,14 @@ export function DashboardPage() {
     const weekRead = ids.filter(
       (id) => new Date(history[id].readAt).getTime() >= weekStartTime,
     ).length
-    const wordsRead = ids.reduce(
-      (sum, id) => sum + (byId.get(id)?.readTimeMinutes ?? 2) * 200,
-      0,
-    )
+    // 有效阅读词数：按真实进度折算（读到50%记一半，读完才全记），不再按篇数估算
+    const wordsRead = ids.reduce((sum, id) => {
+      const article = byId.get(id)
+      if (!article) return sum
+      const progress = Math.max(0, Math.min(1, history[id]?.progress ?? 0))
+      const words = (article.readTimeMinutes ?? 2) * 200 * progress
+      return sum + words
+    }, 0)
 
     const recent = ids
       .sort(
@@ -301,7 +305,7 @@ export function DashboardPage() {
             <StatCard
               icon={<BookOpen className="size-4" aria-hidden="true" />}
               label="累计阅读词数"
-              value={localStats.wordsRead.toLocaleString()}
+              value={Math.round(localStats.wordsRead).toLocaleString()}
             />
             <StatCard
               icon={<Library className="size-4" aria-hidden="true" />}

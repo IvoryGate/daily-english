@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   ArrowLeft,
@@ -22,7 +22,6 @@ import { Separator } from '@/components/ui/separator'
 import { useUserData } from '@/context/UserDataContext'
 import { useArticle } from '@/hooks/useArticle'
 import { difficultyLabels, difficultyStyles } from '@/lib/difficulty'
-import { extractKeywords } from '@/lib/keywords'
 import { sourceLabel } from '@/lib/sourceLabels'
 import { startArticleSpeak, stopArticleSpeak } from '@/lib/speech'
 import {
@@ -32,6 +31,12 @@ import {
   setReadingFontSize,
   type ReadingFontSize,
 } from '@/lib/storage'
+
+interface KeywordItem {
+  word: string
+  count: number
+  level: string
+}
 
 export function ArticleDetailPage() {
   const { id } = useParams()
@@ -60,11 +65,26 @@ export function ArticleDetailPage() {
     setBookmarked(added)
   }
 
-  const keywords = useMemo(
-    () => extractKeywords(article?.content ?? ''),
-    [article],
-  )
+  const [keywordItems, setKeywordItems] = useState<KeywordItem[]>([])
 
+  useEffect(() => {
+    if (!article || article.source === 'local') {
+      setKeywordItems([])
+      return
+    }
+    let active = true
+    fetch(`/api/articles/${article.id}/keywords`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: KeywordItem[]) => {
+        if (active) setKeywordItems(data)
+      })
+      .catch(() => {
+        if (active) setKeywordItems([])
+      })
+    return () => {
+      active = false
+    }
+  }, [article])
   const adjustFont = (delta: -1 | 1) => {
     const index = readingFontSizes.indexOf(fontSize)
     const next = readingFontSizes[Math.max(0, Math.min(readingFontSizes.length - 1, index + delta))]
@@ -284,9 +304,9 @@ export function ArticleDetailPage() {
           </div>
         </header>
 
-        {keywords.length > 0 && (
+        {keywordItems.length > 0 && (
           <div className="mb-6 rounded-2xl border border-primary/15 bg-primary/[0.04] p-4">
-            <KeywordCarousel words={keywords} sourceTitle={article.title} />
+            <KeywordCarousel words={keywordItems} sourceTitle={article.title} />
           </div>
         )}
 

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
+from app.crawler.keywords import extract_keywords
 from app.database import get_db
 from app.models import Article
 from app.schemas import ArticleDetail, ArticleSummary
@@ -56,6 +57,19 @@ def list_articles(
         query = query.where(Article.difficulty == difficulty)
     rows = db.scalars(query.order_by(Article.created_at.desc())).all()
     return [_to_summary(row) for row in rows]
+
+
+@router.get("/{article_id}/keywords")
+def get_article_keywords(
+    article_id: int,
+    limit: int = 8,
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    """返回文章重点词（词形归并 + 词频 + 学习级别）。"""
+    row = db.get(Article, article_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="文章不存在")
+    return extract_keywords(row.content, limit=limit)
 
 
 @router.get("/{article_id}", response_model=ArticleDetail)

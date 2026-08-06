@@ -8,6 +8,17 @@ NOISE_PATTERNS = [
     re.compile(r"^embed\b", re.IGNORECASE),
     re.compile(r"also of interest", re.IGNORECASE),
     re.compile(r"^share\b", re.IGNORECASE),
+    # 媒体占位 / 订阅 / CTA 杂质
+    re.compile(r"^no media source", re.IGNORECASE),
+    re.compile(r"^media source currently", re.IGNORECASE),
+    re.compile(r"^sign up", re.IGNORECASE),
+    re.compile(r"^subscribe", re.IGNORECASE),
+    re.compile(r"^register", re.IGNORECASE),
+    re.compile(r"^advertise", re.IGNORECASE),
+    re.compile(r"^read more", re.IGNORECASE),
+    re.compile(r"^follow us", re.IGNORECASE),
+    re.compile(r"^newsletter", re.IGNORECASE),
+    re.compile(r"^\*\*", re.IGNORECASE),  # 裸 markdown 加粗符
 ]
 
 

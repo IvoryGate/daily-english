@@ -9,14 +9,32 @@ import {
 import { useUserData } from '@/context/UserDataContext'
 import { lookupWord } from '@/lib/dictionary'
 import { SpeakButtons } from '@/components/SpeakButtons'
+import { Badge } from '@/components/ui/badge'
 import type { DictEntry } from '@/types'
 
-/** 重点词轮播：固定高度横向滑卡，每个词一页（美英音标+发音+释义+收藏）。 */
+export interface KeywordItem {
+  word: string
+  count: number
+  level: string
+}
+
+const LEVEL_LABELS: Record<string, string> = {
+  junior: '初中',
+  senior: '高中',
+  cet4: '四级',
+  cet6: '六级',
+  ielts: '雅思',
+  toefl: '托福',
+  tem8: '专八',
+  advanced: '超纲',
+}
+
+/** 重点词轮播：固定高度横向滑卡，每个词一页（美英音标+发音+释义+收藏+分级）。 */
 export function KeywordCarousel({
   words,
   sourceTitle,
 }: {
-  words: string[]
+  words: KeywordItem[]
   sourceTitle: string
 }) {
   const [index, setIndex] = useState(0)
@@ -61,9 +79,9 @@ export function KeywordCarousel({
           className="flex h-full transition-transform duration-300 ease-out"
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
-          {words.map((word) => (
-            <div key={word} className="h-full w-full shrink-0 overflow-hidden">
-              <KeywordView word={word} sourceTitle={sourceTitle} />
+          {words.map((item) => (
+            <div key={item.word} className="h-full w-full shrink-0 overflow-hidden">
+              <KeywordView word={item.word} level={item.level} sourceTitle={sourceTitle} />
             </div>
           ))}
         </div>
@@ -72,7 +90,15 @@ export function KeywordCarousel({
   )
 }
 
-function KeywordView({ word, sourceTitle }: { word: string; sourceTitle: string }) {
+function KeywordView({
+  word,
+  level,
+  sourceTitle,
+}: {
+  word: string
+  level: string
+  sourceTitle: string
+}) {
   const { vocabulary, addVocabulary, removeVocabulary } = useUserData()
   const [entry, setEntry] = useState<DictEntry | null>(null)
   const [loading, setLoading] = useState(true)
@@ -111,6 +137,20 @@ function KeywordView({ word, sourceTitle }: { word: string; sourceTitle: string 
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2.5">
           <h3 className="shrink-0 font-reading text-xl font-bold">{word}</h3>
+          {LEVEL_LABELS[level] && (
+            <Badge
+              variant="outline"
+              className={
+                level === 'junior'
+                  ? 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+                  : level === 'advanced'
+                    ? 'border-rose-500/40 text-rose-600 dark:text-rose-400'
+                    : 'border-primary/30 text-primary'
+              }
+            >
+              {LEVEL_LABELS[level]}
+            </Badge>
+          )}
           {!loading && (
             <SpeakButtons
               word={word}
