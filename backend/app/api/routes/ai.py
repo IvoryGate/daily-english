@@ -21,6 +21,7 @@ from app.schemas import (
     ChatIn,
     NoteIn,
     NoteOut,
+    NoteUpdate,
 )
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
@@ -156,6 +157,24 @@ def create_note(
         article_id=payload.article_id,
     )
     db.add(note)
+    db.commit()
+    db.refresh(note)
+    return note
+
+
+@router.patch("/notes/{note_id}", response_model=NoteOut)
+def update_note(
+    note_id: int,
+    payload: NoteUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Note:
+    note = db.scalars(
+        select(Note).where(Note.id == note_id, Note.user_id == user.id)
+    ).first()
+    if note is None:
+        raise HTTPException(status_code=404, detail="笔记不存在")
+    note.content = payload.content
     db.commit()
     db.refresh(note)
     return note

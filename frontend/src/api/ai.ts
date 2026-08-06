@@ -18,9 +18,7 @@ export interface NoteOut {
   article_id: number | null
   content: string
   created_at: string
-}
-
-export async function fetchAIConfig(): Promise<AIConfig> {
+}export async function fetchAIConfig(): Promise<AIConfig> {
   const token = getToken()
   if (!token) throw new Error('未登录')
   const res = await fetch('/api/ai/config', {
@@ -103,4 +101,48 @@ export async function streamChat(
       }
     }
   }
+}
+
+export async function fetchNotes(): Promise<NoteOut[]> {
+  const token = getToken()
+  if (!token) throw new Error('未登录')
+  const res = await fetch('/api/ai/notes', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return (await res.json()) as NoteOut[]
+}
+
+export async function createNote(content: string, articleId?: number | null): Promise<NoteOut> {
+  const token = getToken()
+  if (!token) throw new Error('未登录')
+  const res = await fetch('/api/ai/notes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ content, article_id: articleId ?? null }),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return (await res.json()) as NoteOut
+}
+
+export async function updateNote(id: number, content: string): Promise<NoteOut> {
+  const token = getToken()
+  if (!token) throw new Error('未登录')
+  const res = await fetch(`/api/ai/notes/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ content }),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return (await res.json()) as NoteOut
+}
+
+export async function deleteNote(id: number): Promise<void> {
+  const token = getToken()
+  if (!token) throw new Error('未登录')
+  const res = await fetch(`/api/ai/notes/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
 }

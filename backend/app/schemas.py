@@ -165,6 +165,10 @@ class NoteIn(BaseModel):
     article_id: int | None = None
 
 
+class NoteUpdate(BaseModel):
+    content: str = Field(min_length=1, max_length=5000)
+
+
 class NoteOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
